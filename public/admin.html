@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADMIN</title>
+    <style>
+        body { background:#222; color:#fff; font-family:sans-serif; display:flex; justify-content:center; align-items:flex-start; padding:30px; }
+        .container { max-width:600px; width:100%; background:#333; padding:20px; border-radius:10px; }
+        h1 { text-align:center; margin-bottom:20px; }
+        .controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+        input,select,button { padding:10px; font-size:1rem; }
+        .code-list { background:#444; padding:10px; border-radius:5px; max-height:300px; overflow-y:auto; }
+        .code-item { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #666; }
+        .code-item:last-child { border-bottom:none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>CODE CENTRE</h1>
+    <div class="controls">
+        <select id="jackpotType">
+            <option value="mini">Mini Jackpot</option>
+            <option value="minor">Minor Jackpot</option>
+            <option value="mega">Mega Jackpot</option>
+            <option value="grand">Grand Jackpot</option>
+        </select>
+        <input type="text" id="newCode" placeholder="New Code">
+        <button id="addCode">ADD CODE</button>
+        <button id="clearCodes">CLEAR CODE</button>
+    </div>
+    <div class="code-list" id="codeList"></div>
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', async () => {
+    let db = { mini: [], minor: [], mega: [], grand: [] };
+    
+    // 从服务器加载代码
+    async function loadCodes() {
+        try {
+            const response = await fetch('/api/codes');
+            if (response.ok) {
+                return await response.json();
+            }
+            return { mini: [], minor: [], mega: [], grand: [] };
+        } catch (error) {
+            console.error("Failed to load codes:", error);
+            return { mini: [], minor: [], mega: [], grand: [] };
+        }
+    }
+    
+    // 渲染列表
+    function renderList() {
+        codeList.innerHTML = '';
+        for (const type in db) {
+            if (db[type].length > 0) {
+                const header = document.createElement('div'); 
+                header.textContent = `${type.toUpperCase()} Jackpot:`; 
+                header.style.fontWeight = 'bold'; 
+                codeList.appendChild(header);
+                db[type].forEach(c => {
+                    const item = document.createElement('div'); 
+                    item.className = 'code-item';
+                    item.innerHTML = `<span>${c}</span><span>${type}</span>`;
+                    codeList.appendChild(item);
+                });
+            }
+        }
+    }
+    
+    // 初始化
+    async function init() {
+        db = await loadCodes();
+        renderList();
+    }
+    
+    // 添加代码
+    document.getElementById('addCode').addEventListener('click', async () => {
+        const type = jackpotType.value; 
+        const code = newCode.value.trim().toUpperCase();
+        if (!code) return alert("ENTER CODE");
+        
+        try {
+            const response = await fetch('/api/codes/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ type, code })
+            });
+            
+            if (response.ok) {
+                db[type].push(code);
+                newCode.value = '';
+                renderList();
+            } else {
+                const error = await response.json();
+                alert(error.error || "Error adding code");
+            }
+        } catch (error) {
+            alert("Network error");
+        }
+    });
+    
+    // 清空代码
+    document.getElementById('clearCodes').addEventListener('click', async () => {
+        if (confirm("Sure to clear all codes?")) {
+            try {
+                const response = await fetch('/api/codes/clear', { 
+                    method: 'POST' 
+                });
+                
+                if (response.ok) {
+                    db = { mini: [], minor: [], mega: [], grand: [] };
+                    renderList();
+                }
+            } catch (error) {
+                alert("Error clearing codes");
+            }
+        }
+    });
+    
+    init();
+});
+</script>
+</body>
+</html>
