@@ -59,31 +59,18 @@
             position: relative;
             z-index: 2;
             display: flex;
-            flex-direction: column;
             align-items: center;
-        }
-        
-        .logo-container {
-            display: flex;
             justify-content: center;
-            margin-bottom: 20px;
-        }
-        
-        .logo-container img {
-            height: 120px;
-            max-width: 100%;
-            margin: 0 auto;
         }
         
         h1 {
-            font-size: 2.5rem;
+            font-size: 3.2rem;
             background: linear-gradient(to right, #ff9a9e, #fad0c4, #fad0c4, #a18cd1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             margin-bottom: 10px;
             text-shadow: 0 0 15px rgba(255, 105, 180, 0.3);
             letter-spacing: 2px;
-            text-align: center;
         }
         
         .code-input-container {
@@ -91,7 +78,6 @@
             margin: 15px 0;
             position: relative;
             z-index: 2;
-            width: 100%;
         }
 
         input[type="text"] {
@@ -103,10 +89,9 @@
         }
         
         #gameCode {
-            padding: 15px;
-            font-size: 1rem;
-            width: 100%;
-            max-width: 320px;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+            width: 320px;
             border: 2px solid #8e44ad;
             border-radius: 15px;
             background: rgba(40, 20, 70, 0.8);
@@ -114,8 +99,6 @@
             outline: none;
             transition: all 0.3s;
             box-shadow: 0 0 15px rgba(142, 68, 173, 0.4);
-            margin: 0 auto;
-            display: block;
         }
         
         #gameCode:focus {
@@ -125,22 +108,21 @@
         
         .spin-btn {
             display: block;
-            width: 100%;
-            max-width: 300px;
-            height: 75px;
-            margin: 25px auto;
+            width: 300px;
+            height: 85px;
+            margin: 30px auto;
             background: linear-gradient(to bottom, #ff6b6b, #c0392b);
             color: white;
             border: none;
             border-radius: 45px;
-            font-size: 1.7rem;
+            font-size: 1.9rem;
             font-weight: bold;
             cursor: pointer;
             position: relative;
             overflow: hidden;
             transition: transform 0.3s, box-shadow 0.3s;
             z-index: 2;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             box-shadow: 0 8px 20px rgba(192, 57, 43, 0.5);
         }
         
@@ -174,23 +156,22 @@
         .reels-container {
             display: flex;
             justify-content: center;
-            gap: 15px;
-            margin: 30px 0;
+            gap: 25px;
+            margin: 40px 0;
             position: relative;
-            min-height: 300px;
+            min-height: 450px;
             z-index: 2;
         }
         
         .reel {
-            width: 30%;
-            max-width: 180px;
-            height: 300px;
+            width: 200px;
+            height: 450px;
             background: rgba(35, 15, 60, 0.9);
             border-radius: 15px;
             overflow: hidden;
             position: relative;
-            border: 5px solid #8e44ad;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6);
+            border: 6px solid #8e44ad;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
         }
         
         .reel-inner {
@@ -201,11 +182,11 @@
         }
         
         .symbol {
-            height: 100px;
+            height: 150px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 3.5rem;
+            font-size: 4.5rem;
             font-weight: bold;
             border-bottom: 2px solid rgba(142, 68, 173, 0.5);
             text-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
@@ -215,27 +196,26 @@
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            width: calc(100% - 30px);
-            height: 100px;
-            border: 4px solid #f1c40f;
+            width: calc(100% - 40px);
+            height: 150px;
+            border: 5px solid #f1c40f;
             pointer-events: none;
             box-sizing: border-box;
             border-radius: 15px;
-            box-shadow: 0 0 30px rgba(241, 196, 15, 0.8);
+            box-shadow: 0 0 40px rgba(241, 196, 15, 0.8);
             z-index: 1;
-            left: 15px;
         }
         
         .result-text {
             text-align: center;
-            font-size: 1.3rem;
-            margin-top: 25px;
-            min-height: 70px;
+            font-size: 1.5rem;
+            margin-top: 30px;
+            min-height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s ease;
-            padding: 15px;
+            padding: 20px;
             border-radius: 15px;
             z-index: 2;
             position: relative;
@@ -246,7 +226,7 @@
             animation: blinkScale 1s infinite alternate;
             color: #f1c40f;
             font-weight: bold;
-            font-size: 1.8rem;
+            font-size: 2.3rem;
             background: rgba(60, 20, 90, 0.9);
             border: 3px solid #f1c40f;
         }
@@ -266,36 +246,36 @@
         }
         
         @keyframes cellBlink {
-            from { box-shadow: 0 0 15px #f1c40f; opacity: 1; }
-            to { box-shadow: 0 0 40px #f1c40f; opacity: 0.7; }
+            from { box-shadow: 0 0 20px #f1c40f; opacity: 1; }
+            to { box-shadow: 0 0 50px #f1c40f; opacity: 0.7; }
         }
         
         .jackpot-info {
             background: rgba(50, 25, 85, 0.7);
             border-radius: 15px;
-            padding: 20px;
-            margin-top: 25px;
+            padding: 25px;
+            margin-top: 35px;
             border: 2px solid #8e44ad;
         }
         
         .jackpot-info h2 {
             text-align: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             color: #f1c40f;
-            font-size: 1.8rem;
+            font-size: 2rem;
             text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
         }
         
         .jackpot-types {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 15px;
         }
         
         .jackpot-type {
             background: rgba(60, 30, 100, 0.9);
-            padding: 15px;
+            padding: 20px 15px;
             border-radius: 15px;
             text-align: center;
             border: 3px solid;
@@ -312,136 +292,76 @@
         .jackpot-type.grand { border-color: #9b59b6; }
         
         .jackpot-type h3 {
-            margin-bottom: 10px;
-            font-size: 1.4rem;
+            margin-bottom: 15px;
+            font-size: 1.6rem;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 8px;
+            gap: 10px;
         }
         
         .jackpot-type p {
-            font-size: 1.2rem;
+            font-size: 1.3rem;
             color: #f1c40f;
-            margin-top: 8px;
+            margin-top: 10px;
         }
         
         .jackpot-symbols {
             display: flex;
             justify-content: center;
-            gap: 8px;
-            font-size: 2rem;
-            margin: 12px 0;
+            gap: 10px;
+            font-size: 2.5rem;
+            margin: 15px 0;
         }
         
         .footer {
             text-align: center;
-            margin-top: 30px;
+            margin-top: 40px;
             color: #b39ddb;
-            font-size: 1rem;
-            padding-top: 15px;
+            font-size: 1.1rem;
+            padding-top: 20px;
             border-top: 1px solid #6a3093;
         }
         
-        /* 规则面板 */
-        .rules-panel {
-            background: rgba(50, 25, 85, 0.7);
-            border-radius: 15px;
-            padding: 15px;
-            margin-top: 20px;
-            border: 2px solid #8e44ad;
-        }
-        
-        .rules-panel h3 {
-            color: #f1c40f;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            font-size: 1.4rem;
-        }
-        
-        .rules-list {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-        
-        .rule-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 1rem;
-            justify-content: center;
-        }
-        
-        .rule-item i {
-            color: #f1c40f;
-        }
-        
-        /* 响应式设计 - 电脑 */
-        @media (min-width: 768px) {
-            header {
-                flex-direction: row;
-                justify-content: center;
-                align-items: center;
-            }
-            
-            .logo-container img {
-                height: 200px;
-                margin-right: 20px;
-            }
-            
-            h1 {
-                font-size: 3.2rem;
-            }
-            
+        /* 响应式设计 */
+        @media (max-width: 768px) {
             .reels-container {
-                min-height: 450px;
-                gap: 25px;
+                gap: 15px;
             }
             
             .reel {
-                width: 200px;
-                height: 450px;
+                width: 160px;
+                height: 400px;
             }
             
             .symbol {
-                height: 150px;
-                font-size: 4.5rem;
+                height: 133px;
+                font-size: 3.5rem;
             }
             
-            .highlight-line {
-                height: 150px;
+            h1 {
+                font-size: 2.5rem;
             }
             
             .spin-btn {
-                height: 85px;
-                font-size: 1.9rem;
+                width: 260px;
+                height: 75px;
+                font-size: 1.7rem;
             }
             
-            .jackpot-types {
-                grid-template-columns: repeat(4, 1fr);
-            }
-            
-            .result-text {
-                font-size: 1.5rem;
-                min-height: 80px;
-            }
-            
-            .win-animation {
-                font-size: 2.3rem;
+            #gameCode {
+                width: 100%;
+                max-width: 280px;
             }
         }
         
-        /* 中等屏幕设备 */
-        @media (min-width: 480px) and (max-width: 767px) {
+        @media (max-width: 480px) {
             .reels-container {
-                min-height: 350px;
+                gap: 10px;
             }
             
             .reel {
+                width: 120px;
                 height: 350px;
             }
             
@@ -450,133 +370,69 @@
                 font-size: 3rem;
             }
             
-            .highlight-line {
-                height: 116px;
-            }
-            
-            .spin-btn {
-                height: 75px;
-            }
-            
-            .jackpot-types {
-                grid-template-columns: 1fr 1fr;
+            .container {
+                padding: 20px 15px;
             }
             
             h1 {
-                font-size: 2.2rem;
-            }
-        }
-        
-        /* 手机设备专用样式 */
-        @media (max-width: 479px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .logo-container img {
-                height: 100px;
-            }
-            
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .reels-container {
-                min-height: 250px;
-                gap: 10px;
-            }
-            
-            .reel {
-                height: 250px;
-            }
-            
-            .symbol {
-                height: 83px;
-                font-size: 2.5rem;
-            }
-            
-            .highlight-line {
-                height: 83px;
-            }
-            
-            .spin-btn {
-                height: 65px;
-                font-size: 1.4rem;
-            }
-            
-            .jackpot-types {
-                grid-template-columns: 1fr;
-            }
-            
-            .result-text {
-                font-size: 1.1rem;
-                min-height: 60px;
-            }
-            
-            .win-animation {
-                font-size: 1.5rem;
-            }
-        }
-        
-        /* 横屏模式优化 */
-        @media (max-height: 600px) and (orientation: landscape) {
-            body {
-                padding: 10px;
-            }
-            
-            .container {
-                padding: 15px;
-                max-width: 100%;
-            }
-            
-            .reels-container {
-                min-height: 200px;
-                gap: 10px;
-            }
-            
-            .reel {
-                height: 200px;
-            }
-            
-            .symbol {
-                height: 66px;
                 font-size: 2rem;
             }
             
-            .highlight-line {
-                height: 66px;
-            }
-            
             .spin-btn {
-                height: 60px;
-                font-size: 1.3rem;
-                margin: 15px auto;
+                width: 220px;
+                height: 70px;
+                font-size: 1.5rem;
             }
             
             .result-text {
-                font-size: 1rem;
-                min-height: 50px;
-                padding: 10px;
+                font-size: 1.5rem;
             }
             
-            .win-animation {
-                font-size: 1.2rem;
+            .jackpot-type h3 {
+                font-size: 1.4rem;
             }
-            
-            .jackpot-info, .rules-panel {
-                padding: 12px;
-                margin-top: 15px;
-            }
+        }
+        
+        /* 规则面板 */
+        .rules-panel {
+            background: rgba(50, 25, 85, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 30px;
+            border: 2px solid #8e44ad;
+        }
+        
+        .rules-panel h3 {
+            color: #f1c40f;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rules-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .rule-item i {
+            color: #f1c40f;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <div class="logo-container">
-                <img src="logo.png" alt="Logo">
-            </div>
-            <h1><i class="fas fa-slot-machine"></i> W33CLUB JACKPOT GAME</h1>
+            <img src="logo.png" alt="Logo" style="height:350px; vertical-align: left;">
+            <h1><i class="fas fa-slot-machine"></i> W33CLUB JACKPOT SLOT</h1>
         </header>
         
         <div class="code-input-container">
@@ -701,20 +557,19 @@
             const fruitSymbols = ["🍒", "🍋", "🍇", "🍎", "🍉", "🍊", "🍓", "🍑"];
             
             // 获取奖券类型
-            function getJackpotType(code) {
-                // 在实际应用中，这里应该从服务器获取代码
-                // 现在使用模拟数据
-                const mockCodeDB = {
-                    mini: ['MINI-2024-001', 'MINI-2024-002'],
-                    minor: ['MINOR-2024-001'],
-                    mega: ['MEGA-2024-001'],
-                    grand: ['GRAND-2024-001']
-                };
-                
-                for (const type in mockCodeDB) {
-                    if (mockCodeDB[type].includes(code)) return type;
+            async function getJackpotType(code) {
+                try {
+                    const response = await fetch('/api/codes');
+                    const codeDB = await response.json();
+                    
+                    for (const type in codeDB) {
+                        if (codeDB[type].includes(code)) return type;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Failed to load codes:", error);
+                    return null;
                 }
-                return null;
             }
             
             // 构建转盘内容
@@ -722,9 +577,7 @@
                 const jackpotSymbol = symbolMap[jackpotType];
                 let html = "";
                 
-                // 生成30个符号（确保有足够的滚动空间）
                 for (let i = 0; i < 30; i++) {
-                    // 确保中间行包含中奖符号
                     if (i === 5) {
                         html += `<div class="symbol">${jackpotSymbol}</div>`;
                     } else {
@@ -756,11 +609,9 @@
                 
                 // 添加微小的延迟确保重置完成
                 setTimeout(() => {
-                    // 计算停止位置（确保停在中间行）
-                    const stopPosition = -4 * 100; // 根据符号高度计算
+                    const stopPosition = -4 * 150;
                     
                     reels.forEach((reel, index) => {
-                        // 添加轻微随机延迟制造真实感
                         setTimeout(() => {
                             reel.style.transition = "top 4s cubic-bezier(0.55, 1, 0.55, 1)";
                             reel.style.top = `${stopPosition}px`;
@@ -770,25 +621,21 @@
                 
                 // 在旋转结束后显示结果
                 setTimeout(() => {
-                    // 验证中奖
                     const centerSymbols = reels.map(reel => {
                         const symbols = reel.querySelectorAll('.symbol');
-                        return symbols[5].textContent; // 获取中间行符号
+                        return symbols[5].textContent;
                     });
                     
-                    // 检查三个转盘中间行是否相同
                     if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
                         const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
                         resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span> 🎉`;
                         resultText.className = "result-text win-animation";
                         
-                        // 高亮中奖符号
                         reels.forEach(reel => {
                             const symbols = reel.querySelectorAll('.symbol');
                             symbols[5].classList.add('win-cell');
                         });
                         
-                        // 添加庆祝效果
                         celebrate();
                     } else {
                         resultText.textContent = "PLEASE TRY AGAIN";
@@ -833,7 +680,7 @@
             }
             
             // 添加点击事件监听器
-            spinBtn.addEventListener('click', () => {
+            spinBtn.addEventListener('click', async () => {
                 const code = codeInput.value.trim().toUpperCase();
                 if (!code) {
                     resultText.textContent = "PLEASE ENTER CODE";
@@ -841,7 +688,7 @@
                     return;
                 }
                 
-                const type = getJackpotType(code);
+                const type = await getJackpotType(code);
                 if (type) {
                     spinReels(type);
                 } else {
