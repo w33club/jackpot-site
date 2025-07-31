@@ -117,6 +117,39 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         }
     });
+
+    document.getElementById('addCode').addEventListener('click', async () => {
+  const type = jackpotType.value; 
+  const code = newCode.value.trim().toUpperCase();
+  
+  if (!code) return alert("ENTER CODE");
+  
+  // Check for duplicate in UI before sending to server
+  const allCodes = Object.values(db).flat();
+  if (allCodes.includes(code)) {
+    alert("Code already exists");
+    return;
+  }
+  
+  try {
+    const response = await fetch('/api/codes/add', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ type, code })
+    });
+    
+    if (response.ok) {
+      db[type].push(code);
+      newCode.value = '';
+      renderList();
+    } else {
+      const error = await response.json();
+      alert(error.error || "Error adding code");
+    }
+  } catch (error) {
+    alert("Network error");
+  }
+});
     
     init();
 });
