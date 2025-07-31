@@ -642,15 +642,35 @@
             // Get jackpot type from code
             async function getJackpotType(code) {
   try {
-    const response = await fetch('/api/codes');
-    const codeDB = await response.json();
+    // Validate code
+    const validateResponse = await fetch('/api/codes/validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
     
-    for (const type in codeDB) {
-      if (codeDB[type].includes(code)) return type;
+    const validateData = await validateResponse.json();
+    
+    if (!validateData.valid) {
+      return null;
     }
-    return null;
+    
+    // Mark code as used
+    const useResponse = await fetch('/api/codes/use', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    
+    if (!useResponse.ok) {
+      const error = await useResponse.json();
+      console.error('Error using code:', error.error);
+      return null;
+    }
+    
+    return validateData.type;
   } catch (error) {
-    console.error('Error fetching codes:', error);
+    console.error('Error validating code:', error);
     return null;
   }
 }
