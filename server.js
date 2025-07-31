@@ -10,6 +10,15 @@ app.use(bodyParser.json());
 // 静态文件服务
 app.use(express.static(path.join(__dirname, 'public')));
 
+// 添加路由处理
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'game.html'));
+});
+
+app.get('/admin', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
 // In-memory database with unique code tracking
 let codeDB = {
   mini: ["MINI123", "MINI456", "MINI789"],
@@ -85,12 +94,6 @@ app.post('/api/codes/validate', (req, res) => {
 
 // Start server
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'game.html'));
-});
-app.get('/admin', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log('Initial codes:');
