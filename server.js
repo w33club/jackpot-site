@@ -1,95 +1,68 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const path = require('path');
-
 const app = express();
-app.use(cors());
-app.use(bodyParser.json());
 
-// 静态文件服务
-app.use(express.static(path.join(__dirname, 'public')));
-
-// In-memory database with unique code tracking
-let codeDB = {
-  mini: ["MINI123", "MINI456", "MINI789"],
-  minor: ["MINOR123", "MINOR456", "MINOR789"],
-  mega: ["MEGA123", "MEGA456", "MEGA789"],
-  grand: ["GRAND123", "GRAND456", "GRAND789"]
+// 使用内存存储（所有用户共享）
+let jackpotCodes = {
+  mini: ['MINI-2024-001'],
+  minor: ['MINOR-2024-001'],
+  mega: ['MEGA-2024-001'],
+  grand: ['GRAND-2024-001']
 };
 
-// Track used codes
-let usedCodes = new Set();
+app.use(express.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// API Endpoints
+// API端点 - 获取所有代码
 app.get('/api/codes', (req, res) => {
-  res.json(codeDB);
+  res.json(jackpotCodes);
 });
 
+// API端点 - 添加代码
 app.post('/api/codes/add', (req, res) => {
   const { type, code } = req.body;
-  const codeUpper = code.toUpperCase();
-  
-  if (!codeDB[type]) {
-    return res.status(400).json({ error: 'Invalid jackpot type' });
+  if (jackpotCodes[type] && !jackpotCodes[type].includes(code)) {
+    jackpotCodes[type].push(code);
+    res.json({ success: true });
+  } else {
+    res.status(400).json({ error: "Code already exists or invalid type" });
   }
-  
-  // Check if code is already in any jackpot type
-  const allCodes = Object.values(codeDB).flat();
-  if (allCodes.includes(codeUpper)) {
-    return res.status(400).json({ error: 'Code already exists' });
-  }
-  
-  codeDB[type].push(codeUpper);
-  res.json({ success: true });
 });
 
+// API端点 - 清空代码
 app.post('/api/codes/clear', (req, res) => {
-  codeDB = {
-    mini: [],
-    minor: [],
-    mega: [],
-    grand: []
-  };
-  usedCodes.clear();
+  jackpotCodes = { mini: [], minor: [], mega: [], grand: [] };
   res.json({ success: true });
 });
 
-// Mark code as used
-app.post('/api/codes/use', (req, res) => {
-  const { code } = req.body;
-  const codeUpper = code.toUpperCase();
-  
-  if (usedCodes.has(codeUpper)) {
-    return res.status(400).json({ error: 'Code already used' });
-  }
-  
-  usedCodes.add(codeUpper);
-  res.json({ success: true });
+// 默认首页
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'game.html'));
 });
 
-// Check if code is valid
-app.post('/api/codes/validate', (req, res) => {
-  const { code } = req.body;
-  const codeUpper = code.toUpperCase();
+// 管理页面密码保护
+app.use('/admin.html', (req, res, next) => {
+  // 从环境变量获取凭证
+  const ADMIN_USER = process.env.ADMIN_USER || 'admin';
+  const ADMIN_PASS = process.env.ADMIN_PASS || 'password123';
   
-  // Find which type this code belongs to
-  for (const type in codeDB) {
-    if (codeDB[type].includes(codeUpper)) {
-      return res.json({ valid: true, type });
-    }
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.split(' ')[1] || '';
+  
+  if (!token) {
+    res.set('WWW-Authenticate', 'Basic realm="Admin Access"');
+    return res.status(401).send('Authentication required');
   }
   
-  res.json({ valid: false });
+  const [username, password] = Buffer.from(token, 'base64').toString().split(':');
+  
+  if (username === ADMIN_USER && password === ADMIN_PASS) {
+    return next();
+  }
+  
+  res.set('WWW-Authenticate', 'Basic realm="Admin Access"');
+  res.status(401).send('Invalid credentials');
 });
 
-// Start server
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log('Initial codes:');
-  console.log('Mini:', codeDB.mini.join(', '));
-  console.log('Minor:', codeDB.minor.join(', '));
-  console.log('Mega:', codeDB.mega.join(', '));
-  console.log('Grand:', codeDB.grand.join(', '));
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
