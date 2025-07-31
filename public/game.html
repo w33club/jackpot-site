@@ -641,19 +641,19 @@
             
             // Get jackpot type from code
             async function getJackpotType(code) {
-                // Simulating API call with local data
-                const codeDB = {
-                    mini: ["MINI123", "MINI456", "MINI789"],
-                    minor: ["MINOR123", "MINOR456", "MINOR789"],
-                    mega: ["MEGA123", "MEGA456", "MEGA789"],
-                    grand: ["GRAND123", "GRAND456", "GRAND789"]
-                };
-                
-                for (const type in codeDB) {
-                    if (codeDB[type].includes(code)) return type;
-                }
-                return null;
-            }
+  try {
+    const response = await fetch('/api/codes');
+    const codeDB = await response.json();
+    
+    for (const type in codeDB) {
+      if (codeDB[type].includes(code)) return type;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching codes:', error);
+    return null;
+  }
+}
             
             // Build reel content with jackpot symbol at position 5
             function buildReelContent(jackpotType) {
