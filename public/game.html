@@ -544,19 +544,15 @@
             <h3><i class="fas fa-info-circle"></i> GAME RULES</h3>
             <div class="rules-list">
                 <div class="rule-item">
-                    <i class="cherries"></i>
                     <span>🍒+🍒+🍒 = MINI JACKPOT</span>
                 </div>
                 <div class="rule-item">
-                    <i class="lemon"></i>
                     <span>🍋+🍋+🍋 = MINOR JACKPOT</span>
                 </div>
                 <div class="rule-item">
-                    <i class="grapes"></i>
                     <span>🍇+🍇+🍇 = MEGA JACKPOT</span>
                 </div>
                 <div class="rule-item">
-                    <i class="apple"></i>
                     <span>🍎+🍎+🍎 = GRAND JACKPOT</span>
                 </div>
             </div>
@@ -641,39 +637,39 @@
             
             // Get jackpot type from code
             async function getJackpotType(code) {
-  try {
-    // Validate code
-    const validateResponse = await fetch('/api/codes/validate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    
-    const validateData = await validateResponse.json();
-    
-    if (!validateData.valid) {
-      return null;
-    }
-    
-    // Mark code as used
-    const useResponse = await fetch('/api/codes/use', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code })
-    });
-    
-    if (!useResponse.ok) {
-      const error = await useResponse.json();
-      console.error('Error using code:', error.error);
-      return null;
-    }
-    
-    return validateData.type;
-  } catch (error) {
-    console.error('Error validating code:', error);
-    return null;
-  }
-}
+                try {
+                    // Validate code
+                    const validateResponse = await fetch('/api/codes/validate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code })
+                    });
+                    
+                    const validateData = await validateResponse.json();
+                    
+                    if (!validateData.valid) {
+                        return null;
+                    }
+                    
+                    // Mark code as used
+                    const useResponse = await fetch('/api/codes/use', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ code })
+                    });
+                    
+                    if (!useResponse.ok) {
+                        const error = await useResponse.json();
+                        console.error('Error using code:', error.error);
+                        return null;
+                    }
+                    
+                    return validateData.type;
+                } catch (error) {
+                    console.error('Error validating code:', error);
+                    return null;
+                }
+            }
             
             // Build reel content with jackpot symbol at position 5
             function buildReelContent(jackpotType) {
