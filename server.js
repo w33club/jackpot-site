@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
-const bcrypt = require('bcryptjs'); // 添加密码哈希库
+const bcrypt = require('bcryptjs');
 
 const app = express();
 app.use(cors());
@@ -51,13 +51,21 @@ async function initDB() {
         // 创建默认管理员账户
         const defaultUsername = 'admin';
         const defaultPassword = 'admin123'; // 生产环境应使用更强的密码
-        const passwordHash = bcrypt.hashSync(defaultPassword, 10);
         
-        await pool.query(`
-            INSERT INTO admin_users (username, password_hash)
-            VALUES ($1, $2)
-            ON CONFLICT (username) DO NOTHING
-        `, [defaultUsername, passwordHash]);
+        // 检查默认账户是否已存在
+        const userResult = await pool.query(
+            'SELECT * FROM admin_users WHERE username = $1',
+            [defaultUsername]
+        );
+        
+        if (userResult.rows.length === 0) {
+            const passwordHash = bcrypt.hashSync(defaultPassword, 10);
+            await pool.query(`
+                INSERT INTO admin_users (username, password_hash)
+                VALUES ($1, $2)
+            `, [defaultUsername, passwordHash]);
+            console.log(`Default admin account created: ${defaultUsername}/${defaultPassword}`);
+        }
         
         console.log('Database tables initialized');
     } catch (err) {
@@ -239,10 +247,55 @@ app.post('/api/admin/login', authenticate, (req, res) => {
     res.json({ success: true });
 });
 
+// 密码更改端点
+app.post('/api/admin/change-password', async (req, res) => {
+    const { username, currentPassword, newPassword } = req.body;
+    
+    if (!username || !currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'All fields are required' });
+    }
+    
+    if (newPassword.length < 6) {
+        return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    try {
+        // 验证当前密码
+        const userResult = await pool.query(
+            'SELECT * FROM admin_users WHERE username = $1',
+            [username]
+        );
+        
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ error: 'User not found' });
+        }
+        
+        const user = userResult.rows[0];
+        const validPassword = bcrypt.compareSync(currentPassword, user.password_hash);
+        
+        if (!validPassword) {
+            return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+        
+        // 生成新密码哈希
+        const newPasswordHash = bcrypt.hashSync(newPassword, 10);
+        
+        // 更新密码
+        await pool.query(
+            'UPDATE admin_users SET password_hash = $1 WHERE username = $2',
+            [newPasswordHash, username]
+        );
+        
+        res.json({ success: true });
+    } catch (err) {
+        console.error('Error changing password:', err);
+        res.status(500).json({ error: 'Database error' });
+    }
+});
+
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     await initDB();
-    console.log('Default admin credentials: admin/admin123');
 });
