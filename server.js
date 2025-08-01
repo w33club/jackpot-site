@@ -21,7 +21,7 @@ app.get('/admin', (req, res) => {
 });
 
 // MongoDB 配置
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://w33club:<w33club>@w33.rzy75di.mongodb.net/?retryWrites=true&w=majority&appName=w33';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://w33club:<w33club9660>@cluster0.zep8erb.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0';
 const DB_NAME = 'jackpot';
 const COLLECTION_NAME = 'codes';
 
