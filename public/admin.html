@@ -5,121 +5,331 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADMIN</title>
     <style>
-        body { background:#222; color:#fff; font-family:sans-serif; display:flex; justify-content:center; align-items:flex-start; padding:30px; }
-        .container { max-width:600px; width:100%; background:#333; padding:20px; border-radius:10px; }
-        h1 { text-align:center; margin-bottom:20px; }
-        .controls { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
-        input,select,button { padding:10px; font-size:1rem; }
-        .code-list { background:#444; padding:10px; border-radius:5px; max-height:300px; overflow-y:auto; }
-        .code-item { display:flex; justify-content:space-between; padding:5px 0; border-bottom:1px solid #666; }
-        .code-item:last-child { border-bottom:none; }
+        body { 
+            background:#222; 
+            color:#fff; 
+            font-family:sans-serif; 
+            display:flex; 
+            justify-content:center; 
+            align-items:center; 
+            min-height:100vh; 
+            padding:20px; 
+        }
+        
+        .login-container, .admin-container {
+            max-width:500px;
+            width:100%;
+            background:#333;
+            padding:30px;
+            border-radius:15px;
+            box-shadow:0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .admin-container {
+            display:none;
+        }
+        
+        h1 { 
+            text-align:center; 
+            margin-bottom:25px; 
+            color:#f1c40f;
+        }
+        
+        .form-group {
+            margin-bottom:20px;
+        }
+        
+        label {
+            display:block;
+            margin-bottom:8px;
+            font-weight:bold;
+            color:#ddd;
+        }
+        
+        input {
+            width:100%;
+            padding:12px;
+            font-size:1rem;
+            border-radius:8px;
+            border:2px solid #555;
+            background:#444;
+            color:#fff;
+            outline:none;
+        }
+        
+        input:focus {
+            border-color:#f1c40f;
+        }
+        
+        button {
+            width:100%;
+            padding:12px;
+            background:#f1c40f;
+            color:#222;
+            border:none;
+            border-radius:8px;
+            font-weight:bold;
+            cursor:pointer;
+            font-size:1.1rem;
+            transition:background 0.3s;
+        }
+        
+        button:hover {
+            background:#e67e22;
+        }
+        
+        .controls { 
+            display:grid; 
+            grid-template-columns:1fr 1fr; 
+            gap:15px; 
+            margin-bottom:25px; 
+        }
+        
+        .code-list { 
+            background:#444; 
+            padding:15px; 
+            border-radius:8px; 
+            max-height:300px; 
+            overflow-y:auto; 
+        }
+        
+        .code-item { 
+            display:flex; 
+            justify-content:space-between; 
+            padding:8px 0; 
+            border-bottom:1px solid #666; 
+        }
+        
+        .code-item:last-child { 
+            border-bottom:none; 
+        }
+        
+        .error-message {
+            color:#e74c3c;
+            text-align:center;
+            margin-top:15px;
+            font-weight:bold;
+        }
+        
+        .logout-btn {
+            position:absolute;
+            top:20px;
+            right:20px;
+            background:#e74c3c;
+            width:auto;
+            padding:8px 15px;
+        }
+        
+        .logout-btn:hover {
+            background:#c0392b;
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>CODE CENTRE</h1>
-    <div class="controls">
-        <select id="jackpotType">
-            <option value="mini">Mini Jackpot</option>
-            <option value="minor">Minor Jackpot</option>
-            <option value="mega">Mega Jackpot</option>
-            <option value="grand">Grand Jackpot</option>
-        </select>
-        <input type="text" id="newCode" placeholder="New Code">
-        <button id="addCode">ADD CODE</button>
-        <button id="clearCodes">CLEAR CODE</button>
+    <div class="login-container" id="loginContainer">
+        <h1>ADMIN LOGIN</h1>
+        <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" placeholder="Enter username">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Enter password">
+        </div>
+        <button id="loginBtn">LOGIN</button>
+        <div class="error-message" id="errorMessage"></div>
     </div>
-    <div class="code-list" id="codeList"></div>
-</div>
-<script>
-document.addEventListener('DOMContentLoaded', async () => {
-    let db = { mini: [], minor: [], mega: [], grand: [] };
     
-    // 从服务器加载代码
-    async function loadCodes() {
-        try {
-            const response = await fetch('/api/codes');
-            if (response.ok) {
-                return await response.json();
+    <div class="admin-container" id="adminContainer">
+        <button class="logout-btn" id="logoutBtn">LOGOUT</button>
+        <h1>CODE CENTRE</h1>
+        <div class="controls">
+            <select id="jackpotType">
+                <option value="mini">Mini Jackpot</option>
+                <option value="minor">Minor Jackpot</option>
+                <option value="mega">Mega Jackpot</option>
+                <option value="grand">Grand Jackpot</option>
+            </select>
+            <input type="text" id="newCode" placeholder="New Code">
+            <button id="addCode">ADD CODE</button>
+            <button id="clearCodes">CLEAR ALL CODES</button>
+        </div>
+        <div class="code-list" id="codeList"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const loginContainer = document.getElementById('loginContainer');
+            const adminContainer = document.getElementById('adminContainer');
+            const loginBtn = document.getElementById('loginBtn');
+            const logoutBtn = document.getElementById('logoutBtn');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            // 检查是否已有登录状态
+            if (sessionStorage.getItem('isAdmin')) {
+                showAdminInterface();
             }
-            return { mini: [], minor: [], mega: [], grand: [] };
-        } catch (error) {
-            console.error("Failed to load codes:", error);
-            return { mini: [], minor: [], mega: [], grand: [] };
-        }
-    }
-    
-    // 渲染列表
-    function renderList() {
-        codeList.innerHTML = '';
-        for (const type in db) {
-            if (db[type].length > 0) {
-                const header = document.createElement('div'); 
-                header.textContent = `${type.toUpperCase()} Jackpot:`; 
-                header.style.fontWeight = 'bold'; 
-                codeList.appendChild(header);
-                db[type].forEach(c => {
-                    const item = document.createElement('div'); 
-                    item.className = 'code-item';
-                    item.innerHTML = `<span>${c}</span><span>${type}</span>`;
-                    codeList.appendChild(item);
-                });
-            }
-        }
-    }
-    
-    // 初始化
-    async function init() {
-        db = await loadCodes();
-        renderList();
-    }
-    
-    // 添加代码
-    document.getElementById('addCode').addEventListener('click', async () => {
-        const type = jackpotType.value; 
-        const code = newCode.value.trim().toUpperCase();
-        if (!code) return alert("ENTER CODE");
-        
-        try {
-            const response = await fetch('/api/codes/add', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ type, code })
+            
+            // 登录按钮事件
+            loginBtn.addEventListener('click', login);
+            
+            // 登出按钮事件
+            logoutBtn.addEventListener('click', logout);
+            
+            // 监听Enter键
+            document.getElementById('password').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    login();
+                }
             });
             
-            if (response.ok) {
-                db[type].push(code);
-                newCode.value = '';
-                renderList();
-            } else {
-                const error = await response.json();
-                alert(error.error || "Error adding code");
-            }
-        } catch (error) {
-            alert("Network error");
-        }
-    });
-    
-    // 清空代码
-    document.getElementById('clearCodes').addEventListener('click', async () => {
-        if (confirm("Sure to clear all codes?")) {
-            try {
-                const response = await fetch('/api/codes/clear', { 
-                    method: 'POST' 
-                });
+            async function login() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
                 
-                if (response.ok) {
-                    db = { mini: [], minor: [], mega: [], grand: [] };
+                if (!username || !password) {
+                    errorMessage.textContent = 'Please enter username and password';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/admin/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        sessionStorage.setItem('isAdmin', 'true');
+                        showAdminInterface();
+                    } else {
+                        errorMessage.textContent = data.error || 'Login failed';
+                    }
+                } catch (error) {
+                    console.error("Login error:", error);
+                    errorMessage.textContent = 'Network error';
+                }
+            }
+            
+            function logout() {
+                sessionStorage.removeItem('isAdmin');
+                loginContainer.style.display = 'block';
+                adminContainer.style.display = 'none';
+                document.getElementById('username').value = '';
+                document.getElementById('password').value = '';
+                errorMessage.textContent = '';
+            }
+            
+            function showAdminInterface() {
+                loginContainer.style.display = 'none';
+                adminContainer.style.display = 'block';
+                initAdminInterface();
+            }
+            
+            // 以下为原来的管理界面代码
+            async function initAdminInterface() {
+                let db = { mini: [], minor: [], mega: [], grand: [] };
+                
+                // 从服务器加载代码
+                async function loadCodes() {
+                    try {
+                        const response = await fetch('/api/codes');
+                        if (response.ok) {
+                            return await response.json();
+                        }
+                        return { mini: [], minor: [], mega: [], grand: [] };
+                    } catch (error) {
+                        console.error("Failed to load codes:", error);
+                        return { mini: [], minor: [], mega: [], grand: [] };
+                    }
+                }
+                
+                // 渲染列表
+                function renderList() {
+                    codeList.innerHTML = '';
+                    for (const type in db) {
+                        if (db[type].length > 0) {
+                            const header = document.createElement('div'); 
+                            header.textContent = `${type.toUpperCase()} Jackpot:`; 
+                            header.style.fontWeight = 'bold'; 
+                            header.style.marginTop = '15px';
+                            header.style.color = '#f1c40f';
+                            codeList.appendChild(header);
+                            db[type].forEach(c => {
+                                const item = document.createElement('div'); 
+                                item.className = 'code-item';
+                                item.innerHTML = `<span>${c}</span><span>${type}</span>`;
+                                codeList.appendChild(item);
+                            });
+                        }
+                    }
+                    
+                    if (Object.values(db).every(arr => arr.length === 0)) {
+                        codeList.innerHTML = '<div style="text-align:center;padding:20px;color:#aaa;">No codes available</div>';
+                    }
+                }
+                
+                // 初始化
+                async function init() {
+                    db = await loadCodes();
                     renderList();
                 }
-            } catch (error) {
-                alert("Error clearing codes");
+                
+                // 添加代码
+                document.getElementById('addCode').addEventListener('click', async () => {
+                    const type = jackpotType.value; 
+                    const code = newCode.value.trim().toUpperCase();
+                    if (!code) return alert("ENTER CODE");
+                    
+                    try {
+                        const response = await fetch('/api/codes/add', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': 'Bearer ' + sessionStorage.getItem('isAdmin')
+                            },
+                            body: JSON.stringify({ type, code })
+                        });
+                        
+                        if (response.ok) {
+                            db[type].push(code);
+                            newCode.value = '';
+                            renderList();
+                        } else {
+                            const error = await response.json();
+                            alert(error.error || "Error adding code");
+                        }
+                    } catch (error) {
+                        alert("Network error");
+                    }
+                });
+                
+                // 清空代码
+                document.getElementById('clearCodes').addEventListener('click', async () => {
+                    if (confirm("Are you sure you want to clear ALL codes?")) {
+                        try {
+                            const response = await fetch('/api/codes/clear', { 
+                                method: 'POST',
+                                headers: { 
+                                    'Authorization': 'Bearer ' + sessionStorage.getItem('isAdmin')
+                                }
+                            });
+                            
+                            if (response.ok) {
+                                db = { mini: [], minor: [], mega: [], grand: [] };
+                                renderList();
+                            }
+                        } catch (error) {
+                            alert("Error clearing codes");
+                        }
+                    }
+                });
+                
+                init();
             }
-        }
-    });
-    
-    init();
-});
-</script>
+        });
+    </script>
 </body>
 </html>
