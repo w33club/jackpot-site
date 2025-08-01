@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken'); // 添加 JWT 依赖
 
 const app = express();
 app.use(cors());
@@ -17,6 +18,9 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
+
+// JWT 密钥 - 生产环境应使用更安全的密钥
+const JWT_SECRET = process.env.JWT_SECRET || 'your_strong_jwt_secret_key';
 
 // 初始化数据库表
 async function initDB() {
@@ -50,7 +54,7 @@ async function initDB() {
         
         // 创建默认管理员账户
         const defaultUsername = 'admin';
-        const defaultPassword = 'admin123'; // 生产环境应使用更强的密码
+        const defaultPassword = 'admin123';
         
         // 检查默认账户是否已存在
         const userResult = await pool.query(
@@ -98,10 +102,32 @@ async function authenticate(req, res, next) {
             return res.status(401).json({ error: 'Invalid username or password' });
         }
         
+        // 将用户信息附加到请求对象，以便后续使用
+        req.user = user;
         next();
     } catch (err) {
         console.error('Authentication error:', err);
         res.status(500).json({ error: 'Internal server error' });
+    }
+}
+
+// JWT 验证中间件
+function authenticateJWT(req, res, next) {
+    const authHeader = req.headers.authorization;
+    
+    if (authHeader) {
+        const token = authHeader.split(' ')[1]; // Bearer <token>
+        
+        jwt.verify(token, JWT_SECRET, (err, user) => {
+            if (err) {
+                return res.status(403).json({ error: 'Invalid token' });
+            }
+            
+            req.user = user;
+            next();
+        });
+    } else {
+        res.status(401).json({ error: 'Authorization header missing' });
     }
 }
 
@@ -138,8 +164,8 @@ app.get('/api/codes', async (req, res) => {
     }
 });
 
-// 保护管理API端点
-app.post('/api/codes/add', authenticate, async (req, res) => {
+// 保护管理API端点 - 使用 JWT 中间件
+app.post('/api/codes/add', authenticateJWT, async (req, res) => {
     const { type, code } = req.body;
     const codeUpper = code.toUpperCase();
     
@@ -171,7 +197,7 @@ app.post('/api/codes/add', authenticate, async (req, res) => {
     }
 });
 
-app.post('/api/codes/clear', authenticate, async (req, res) => {
+app.post('/api/codes/clear', authenticateJWT, async (req, res) => {
     try {
         await pool.query('TRUNCATE TABLE codes RESTART IDENTITY');
         await pool.query('TRUNCATE TABLE used_codes RESTART IDENTITY');
@@ -244,14 +270,21 @@ app.post('/api/codes/validate', async (req, res) => {
 
 // 用户管理端点
 app.post('/api/admin/login', authenticate, (req, res) => {
-    res.json({ success: true });
+    // 生成 JWT 令牌，有效期为 1 小时
+    const token = jwt.sign(
+        { username: req.user.username, id: req.user.id }, 
+        JWT_SECRET, 
+        { expiresIn: '1h' }
+    );
+    res.json({ success: true, token });
 });
 
 // 密码更改端点
-app.post('/api/admin/change-password', async (req, res) => {
-    const { username, currentPassword, newPassword } = req.body;
+app.post('/api/admin/change-password', authenticateJWT, async (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const username = req.user.username; // 从 JWT 中获取
     
-    if (!username || !currentPassword || !newPassword) {
+    if (!currentPassword || !newPassword) {
         return res.status(400).json({ error: 'All fields are required' });
     }
     
@@ -298,4 +331,7 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     await initDB();
+    console.log('JWT Secret:', JWT_SECRET === 'your_strong_jwt_secret_key' ? 
+        'Using default JWT secret. For production, set JWT_SECRET environment variable.' : 
+        'Using custom JWT secret from environment.');
 });
