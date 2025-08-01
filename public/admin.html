@@ -111,17 +111,81 @@
             font-weight:bold;
         }
         
-        .logout-btn {
+        .action-buttons {
             position:absolute;
             top:20px;
             right:20px;
-            background:#e74c3c;
+            display: flex;
+            gap: 10px;
+        }
+        
+        .action-btn {
             width:auto;
             padding:8px 15px;
         }
         
+        .logout-btn {
+            background:#e74c3c;
+        }
+        
         .logout-btn:hover {
             background:#c0392b;
+        }
+        
+        .change-password-btn {
+            background:#3498db;
+        }
+        
+        .change-password-btn:hover {
+            background:#2980b9;
+        }
+        
+        /* 密码更改模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+        }
+        
+        .modal-content {
+            background: #333;
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5rem;
+            color: #aaa;
+            cursor: pointer;
+        }
+        
+        .close-modal:hover {
+            color: #fff;
+        }
+        
+        .modal-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #f1c40f;
+        }
+        
+        .password-rules {
+            color: #bbb;
+            font-size: 0.9rem;
+            margin-top: 5px;
         }
     </style>
 </head>
@@ -141,7 +205,10 @@
     </div>
     
     <div class="admin-container" id="adminContainer">
-        <button class="logout-btn" id="logoutBtn">LOGOUT</button>
+        <div class="action-buttons">
+            <button class="action-btn change-password-btn" id="changePasswordBtn">CHANGE PASSWORD</button>
+            <button class="action-btn logout-btn" id="logoutBtn">LOGOUT</button>
+        </div>
         <h1>CODE CENTRE</h1>
         <div class="controls">
             <select id="jackpotType">
@@ -156,6 +223,29 @@
         </div>
         <div class="code-list" id="codeList"></div>
     </div>
+    
+    <!-- 密码更改模态框 -->
+    <div id="passwordModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" id="closeModal">&times;</span>
+            <h2 class="modal-title">CHANGE PASSWORD</h2>
+            <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input type="password" id="currentPassword" placeholder="Enter current password">
+            </div>
+            <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <input type="password" id="newPassword" placeholder="Enter new password">
+                <div class="password-rules">At least 6 characters</div>
+            </div>
+            <div class="form-group">
+                <label for="confirmPassword">Confirm New Password</label>
+                <input type="password" id="confirmPassword" placeholder="Confirm new password">
+            </div>
+            <button id="submitPasswordChange">CHANGE PASSWORD</button>
+            <div class="error-message" id="passwordErrorMessage"></div>
+        </div>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -163,7 +253,12 @@
             const adminContainer = document.getElementById('adminContainer');
             const loginBtn = document.getElementById('loginBtn');
             const logoutBtn = document.getElementById('logoutBtn');
+            const changePasswordBtn = document.getElementById('changePasswordBtn');
             const errorMessage = document.getElementById('errorMessage');
+            const passwordModal = document.getElementById('passwordModal');
+            const closeModal = document.getElementById('closeModal');
+            const submitPasswordChange = document.getElementById('submitPasswordChange');
+            const passwordErrorMessage = document.getElementById('passwordErrorMessage');
             
             // 检查是否已有登录状态
             if (sessionStorage.getItem('isAdmin')) {
@@ -175,6 +270,20 @@
             
             // 登出按钮事件
             logoutBtn.addEventListener('click', logout);
+            
+            // 打开密码更改模态框
+            changePasswordBtn.addEventListener('click', () => {
+                passwordModal.style.display = 'block';
+            });
+            
+            // 关闭模态框
+            closeModal.addEventListener('click', () => {
+                passwordModal.style.display = 'none';
+                clearPasswordForm();
+            });
+            
+            // 提交密码更改
+            submitPasswordChange.addEventListener('click', changePassword);
             
             // 监听Enter键
             document.getElementById('password').addEventListener('keypress', (e) => {
@@ -203,6 +312,7 @@
                     
                     if (response.ok) {
                         sessionStorage.setItem('isAdmin', 'true');
+                        sessionStorage.setItem('adminUsername', username);
                         showAdminInterface();
                     } else {
                         errorMessage.textContent = data.error || 'Login failed';
@@ -215,6 +325,7 @@
             
             function logout() {
                 sessionStorage.removeItem('isAdmin');
+                sessionStorage.removeItem('adminUsername');
                 loginContainer.style.display = 'block';
                 adminContainer.style.display = 'none';
                 document.getElementById('username').value = '';
@@ -226,6 +337,60 @@
                 loginContainer.style.display = 'none';
                 adminContainer.style.display = 'block';
                 initAdminInterface();
+            }
+            
+            function clearPasswordForm() {
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                passwordErrorMessage.textContent = '';
+            }
+            
+            async function changePassword() {
+                const currentPassword = document.getElementById('currentPassword').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmPassword = document.getElementById('confirmPassword').value;
+                const username = sessionStorage.getItem('adminUsername');
+                
+                if (!currentPassword || !newPassword || !confirmPassword) {
+                    passwordErrorMessage.textContent = 'All fields are required';
+                    return;
+                }
+                
+                if (newPassword.length < 6) {
+                    passwordErrorMessage.textContent = 'Password must be at least 6 characters';
+                    return;
+                }
+                
+                if (newPassword !== confirmPassword) {
+                    passwordErrorMessage.textContent = 'New passwords do not match';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/admin/change-password', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            username,
+                            currentPassword,
+                            newPassword 
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        alert('Password changed successfully!');
+                        passwordModal.style.display = 'none';
+                        clearPasswordForm();
+                    } else {
+                        passwordErrorMessage.textContent = data.error || 'Failed to change password';
+                    }
+                } catch (error) {
+                    console.error("Password change error:", error);
+                    passwordErrorMessage.textContent = 'Network error';
+                }
             }
             
             // 以下为原来的管理界面代码
