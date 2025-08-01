@@ -261,7 +261,7 @@
             const passwordErrorMessage = document.getElementById('passwordErrorMessage');
             
             // 检查是否已有登录状态
-            if (sessionStorage.getItem('isAdmin')) {
+            if (sessionStorage.getItem('jwtToken')) {
                 showAdminInterface();
             }
             
@@ -311,8 +311,8 @@
                     const data = await response.json();
                     
                     if (response.ok) {
-                        sessionStorage.setItem('isAdmin', 'true');
-                        sessionStorage.setItem('adminUsername', username);
+                        // 保存 JWT 令牌
+                        sessionStorage.setItem('jwtToken', data.token);
                         showAdminInterface();
                     } else {
                         errorMessage.textContent = data.error || 'Login failed';
@@ -324,8 +324,7 @@
             }
             
             function logout() {
-                sessionStorage.removeItem('isAdmin');
-                sessionStorage.removeItem('adminUsername');
+                sessionStorage.removeItem('jwtToken');
                 loginContainer.style.display = 'block';
                 adminContainer.style.display = 'none';
                 document.getElementById('username').value = '';
@@ -350,7 +349,6 @@
                 const currentPassword = document.getElementById('currentPassword').value;
                 const newPassword = document.getElementById('newPassword').value;
                 const confirmPassword = document.getElementById('confirmPassword').value;
-                const username = sessionStorage.getItem('adminUsername');
                 
                 if (!currentPassword || !newPassword || !confirmPassword) {
                     passwordErrorMessage.textContent = 'All fields are required';
@@ -368,11 +366,20 @@
                 }
                 
                 try {
+                    const token = sessionStorage.getItem('jwtToken');
+                    if (!token) {
+                        alert('Session expired. Please login again.');
+                        logout();
+                        return;
+                    }
+                    
                     const response = await fetch('/api/admin/change-password', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
                         body: JSON.stringify({ 
-                            username,
                             currentPassword,
                             newPassword 
                         })
@@ -393,18 +400,34 @@
                 }
             }
             
-            // 以下为原来的管理界面代码
+            // 管理界面代码
             async function initAdminInterface() {
                 let db = { mini: [], minor: [], mega: [], grand: [] };
                 
                 // 从服务器加载代码
                 async function loadCodes() {
                     try {
-                        const response = await fetch('/api/codes');
+                        const token = sessionStorage.getItem('jwtToken');
+                        if (!token) {
+                            logout();
+                            return { mini: [], minor: [], mega: [], grand: [] };
+                        }
+                        
+                        const response = await fetch('/api/codes', {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
                         if (response.ok) {
                             return await response.json();
+                        } else if (response.status === 401) {
+                            logout();
+                            alert('Session expired. Please login again.');
+                            return { mini: [], minor: [], mega: [], grand: [] };
+                        } else {
+                            return { mini: [], minor: [], mega: [], grand: [] };
                         }
-                        return { mini: [], minor: [], mega: [], grand: [] };
                     } catch (error) {
                         console.error("Failed to load codes:", error);
                         return { mini: [], minor: [], mega: [], grand: [] };
@@ -443,75 +466,81 @@
                 }
                 
                 // 添加代码
-        document.getElementById('addCode').addEventListener('click', async () => {
-            const type = jackpotType.value; 
-            const code = newCode.value.trim().toUpperCase();
-            if (!code) return alert("ENTER CODE");
-            
-            try {
-                // 获取当前登录的用户名
-                const username = sessionStorage.getItem('adminUsername');
-                if (!username) {
-                    alert("Session expired. Please login again.");
-                    logout();
-                    return;
-                }
-                
-                const response = await fetch('/api/codes/add', {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': `Basic ${btoa(username + ":" + sessionStorage.getItem('adminPassword'))}`
-                    },
-                    body: JSON.stringify({ type, code })
+                document.getElementById('addCode').addEventListener('click', async () => {
+                    const type = jackpotType.value; 
+                    const code = newCode.value.trim().toUpperCase();
+                    if (!code) return alert("ENTER CODE");
+                    
+                    try {
+                        const token = sessionStorage.getItem('jwtToken');
+                        if (!token) {
+                            alert("Session expired. Please login again.");
+                            logout();
+                            return;
+                        }
+                        
+                        const response = await fetch('/api/codes/add', {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ type, code })
+                        });
+                        
+                        if (response.ok) {
+                            db[type].push(code);
+                            newCode.value = '';
+                            renderList();
+                        } else {
+                            if (response.status === 401) {
+                                logout();
+                                alert('Session expired. Please login again.');
+                            } else {
+                                const error = await response.json();
+                                alert(error.error || "Error adding code");
+                            }
+                        }
+                    } catch (error) {
+                        alert("Network error");
+                    }
                 });
                 
-                if (response.ok) {
-                    db[type].push(code);
-                    newCode.value = '';
-                    renderList();
-                } else {
-                    const error = await response.json();
-                    alert(error.error || "Error adding code");
-                }
-            } catch (error) {
-                alert("Network error");
-            }
-        });
-        
-        // 清空代码
-        document.getElementById('clearCodes').addEventListener('click', async () => {
-            if (confirm("Are you sure you want to clear ALL codes?")) {
-                try {
-                    // 获取当前登录的用户名
-                    const username = sessionStorage.getItem('adminUsername');
-                    if (!username) {
-                        alert("Session expired. Please login again.");
-                        logout();
-                        return;
-                    }
-                    
-                    const response = await fetch('/api/codes/clear', { 
-                        method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Basic ${btoa(username + ":" + sessionStorage.getItem('adminPassword'))}`
+                // 清空代码
+                document.getElementById('clearCodes').addEventListener('click', async () => {
+                    if (confirm("Are you sure you want to clear ALL codes?")) {
+                        try {
+                            const token = sessionStorage.getItem('jwtToken');
+                            if (!token) {
+                                alert("Session expired. Please login again.");
+                                logout();
+                                return;
+                            }
+                            
+                            const response = await fetch('/api/codes/clear', { 
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+                            
+                            if (response.ok) {
+                                db = { mini: [], minor: [], mega: [], grand: [] };
+                                renderList();
+                            } else if (response.status === 401) {
+                                logout();
+                                alert('Session expired. Please login again.');
+                            }
+                        } catch (error) {
+                            alert("Error clearing codes");
                         }
-                    });
-                    
-                    if (response.ok) {
-                        db = { mini: [], minor: [], mega: [], grand: [] };
-                        renderList();
                     }
-                } catch (error) {
-                    alert("Error clearing codes");
-                }
+                });
+                
+                init();
             }
         });
-        
-        init();
-    }
-});
-</script>
+    </script>
 </body>
 </html>
