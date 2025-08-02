@@ -38,7 +38,8 @@ async function initDB() {
         await pool.query(`
             CREATE TABLE IF NOT EXISTS used_codes (
                 id SERIAL PRIMARY KEY,
-                code VARCHAR(50) NOT NULL UNIQUE
+                code VARCHAR(50) NOT NULL UNIQUE,
+                used_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         `);
         
@@ -59,28 +60,29 @@ async function initDB() {
                 current_value DOUBLE PRECISION NOT NULL,
                 min_value DOUBLE PRECISION NOT NULL,
                 max_value DOUBLE PRECISION NOT NULL,
-                last_updated TIMESTAMP NOT NULL
+                last_updated TIMESTAMP NOT NULL,
+                last_reset TIMESTAMP NOT NULL
             )
         `);
         
-        // 初始化默认奖池值
-        const jackpots = [
-            { name: 'mini', current: 1.0, min: 1.0, max: 8.0 },
-            { name: 'minor', current: 8.0, min: 8.0, max: 20.0 },
-            { name: 'mega', current: 20.0, min: 20.0, max: 40.0 },
-            { name: 'grand', current: 40.0, min: 40.0, max: 188.0 }
-        ];
-        
-        for (const jackpot of jackpots) {
-            await pool.query(`
-                INSERT INTO jackpots (name, current_value, min_value, max_value, last_updated)
-                VALUES ($1, $2, $3, $4, NOW())
-                ON CONFLICT (name) DO UPDATE SET
-                    current_value = EXCLUDED.current_value,
-                    min_value = EXCLUDED.min_value,
-                    max_value = EXCLUDED.max_value,
-                    last_updated = EXCLUDED.last_updated
-            `, [jackpot.name, jackpot.current, jackpot.min, jackpot.max]);
+        // 初始化默认奖池值（仅当表为空时）
+        const jackpotCheck = await pool.query('SELECT COUNT(*) FROM jackpots');
+        if (jackpotCheck.rows[0].count == 0) {
+            const now = new Date();
+            const jackpots = [
+                { name: 'mini', current: 1.0, min: 1.0, max: 8.0 },
+                { name: 'minor', current: 8.0, min: 8.0, max: 20.0 },
+                { name: 'mega', current: 20.0, min: 20.0, max: 40.0 },
+                { name: 'grand', current: 40.0, min: 40.0, max: 188.0 }
+            ];
+            
+            for (const jackpot of jackpots) {
+                await pool.query(`
+                    INSERT INTO jackpots (name, current_value, min_value, max_value, last_updated, last_reset)
+                    VALUES ($1, $2, $3, $4, $5, $5)
+                `, [jackpot.name, jackpot.current, jackpot.min, jackpot.max, now]);
+            }
+            console.log('Jackpot values initialized');
         }
         
         // 创建默认管理员账户
@@ -173,7 +175,8 @@ async function getJackpotValues() {
                 current: parseFloat(row.current_value),
                 min: parseFloat(row.min_value),
                 max: parseFloat(row.max_value),
-                lastUpdated: row.last_updated
+                lastUpdated: row.last_updated,
+                lastReset: row.last_reset
             };
         });
         
@@ -184,7 +187,7 @@ async function getJackpotValues() {
     }
 }
 
-// 更新奖池值
+// 更新奖池值（2小时周期）
 async function updateJackpotValues() {
     try {
         const now = new Date();
@@ -193,35 +196,34 @@ async function updateJackpotValues() {
         if (!jackpots) return;
         
         for (const [name, jackpot] of Object.entries(jackpots)) {
-            const lastUpdated = new Date(jackpot.lastUpdated);
-            const elapsedMs = now - lastUpdated;
+            const lastReset = new Date(jackpot.lastReset);
+            const elapsedMs = now - lastReset;
             const elapsedHours = elapsedMs / (1000 * 60 * 60);
             
-            // 计算新值
-            const range = jackpot.max - jackpot.min;
-            const increment = range * (elapsedHours / 2); // 2小时完成整个范围
-            
-            let newValue = jackpot.current + increment;
-            
-            // 检查是否超过最大值
-            if (newValue >= jackpot.max) {
-                // 重置为最小值
-                newValue = jackpot.min;
-                
-                // 更新数据库
+            // 检查是否需要重置（每2小时重置一次）
+            if (elapsedHours >= 2) {
+                // 重置为最小值并更新重置时间
                 await pool.query(`
                     UPDATE jackpots 
-                    SET current_value = $1, last_updated = NOW() 
-                    WHERE name = $2
-                `, [newValue, name]);
-            } else {
-                // 更新数据库
-                await pool.query(`
-                    UPDATE jackpots 
-                    SET current_value = $1, last_updated = $2 
+                    SET current_value = $1, last_updated = $2, last_reset = $2
                     WHERE name = $3
-                `, [newValue, now, name]);
+                `, [jackpot.min, now, name]);
+                continue;
             }
+            
+            // 计算当前进度（0-1之间）
+            const progress = elapsedHours / 2;
+            
+            // 计算新值（线性增长）
+            const range = jackpot.max - jackpot.min;
+            const newValue = jackpot.min + (range * progress);
+            
+            // 更新数据库
+            await pool.query(`
+                UPDATE jackpots 
+                SET current_value = $1, last_updated = $2 
+                WHERE name = $3
+            `, [newValue, now, name]);
         }
     } catch (err) {
         console.error('Error updating jackpot values:', err);
@@ -447,11 +449,8 @@ app.listen(PORT, async () => {
     // 初始化后更新奖池值
     await updateJackpotValues();
     
-    // 设置定时任务，每分钟更新一次奖池值
-    setInterval(updateJackpotValues, 60 * 1000);
+    // 设置定时任务，每秒更新一次奖池值（实现跳动效果）
+    setInterval(updateJackpotValues, 1000);
     
-    console.log('Jackpot update timer started');
-    console.log('JWT Secret:', JWT_SECRET === 'your_strong_jwt_secret_key' ? 
-        'Using default JWT secret. For production, set JWT_SECRET environment variable.' : 
-        'Using custom JWT secret from environment.');
+    console.log('Jackpot update timer started (every second)');
 });
