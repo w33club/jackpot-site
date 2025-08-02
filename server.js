@@ -208,6 +208,7 @@ async function updateJackpotValues() {
                     SET current_value = $1, last_updated = $2, last_reset = $2
                     WHERE name = $3
                 `, [jackpot.min, now, name]);
+                console.log(`Reset ${name} jackpot to min value`);
                 continue;
             }
             
@@ -449,8 +450,11 @@ app.listen(PORT, async () => {
     // 初始化后更新奖池值
     await updateJackpotValues();
     
-    // 设置定时任务，每秒更新一次奖池值（实现跳动效果）
-    setInterval(updateJackpotValues, 1000);
+    // 设置定时任务，每30秒更新一次奖池值
+    setInterval(updateJackpotValues, 30 * 1000);
     
-    console.log('Jackpot update timer started (every second)');
+    console.log('Jackpot update timer started (every 30 seconds)');
+    console.log('JWT Secret:', JWT_SECRET === 'your_strong_jwt_secret_key' ? 
+        'Using default JWT secret. For production, set JWT_SECRET environment variable.' : 
+        'Using custom JWT secret from environment.');
 });
