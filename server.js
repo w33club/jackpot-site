@@ -20,8 +20,7 @@ const pool = new Pool({
 });
 
 // JWT 密钥
-const JWT_SECRET = process.env.JWT_SECRET || 'IyVoRV2/NcyH06+61y4/QseoUIerI6FdLFCR+VxxG/fG/26ly8lLH7JHhYmgc148
-TupaQ6tjj4DQa/HL2ru5QQ==';
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // 初始化数据库表
 async function initDB() {
@@ -467,5 +466,6 @@ app.listen(PORT, async () => {
   
   console.log('Jackpot update timer started (every second)');
 });
+
 
 
