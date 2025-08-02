@@ -320,6 +320,8 @@
             font-size: 1.1rem;
             color: #f1c40f;
             margin-top: 8px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
         }
         
         .jackpot-symbols {
@@ -373,6 +375,29 @@
         .rule-item i {
             color: #f1c40f;
         }
+        
+        /* Progress bar for jackpots */
+        .jackpot-progress {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-radius: 4px;
+        }
+        
+        .mini .progress-fill { background: linear-gradient(to right, #ff6b6b, #ff9a9e); }
+        .minor .progress-fill { background: linear-gradient(to right, #1abc9c, #16a085); }
+        .mega .progress-fill { background: linear-gradient(to right, #3498db, #2980b9); }
+        .grand .progress-fill { background: linear-gradient(to right, #9b59b6, #8e44ad); }
         
         /* Responsive design */
         @media (min-width: 480px) {
@@ -568,7 +593,10 @@
                         <span>🍒</span>
                     </div>
                     <h3>MINI JACKPOT</h3>
-                    <p>$？？？</p>
+                    <p id="miniAmount">$1.000</p>
+                    <div class="jackpot-progress">
+                        <div class="progress-fill" id="miniProgress" style="width: 0%"></div>
+                    </div>
                 </div>
                 <div class="jackpot-type minor">
                     <div class="jackpot-symbols">
@@ -577,7 +605,10 @@
                         <span>🍋</span>
                     </div>
                     <h3>MINOR JACKPOT</h3>
-                    <p>$？？？</p>
+                    <p id="minorAmount">$8.000</p>
+                    <div class="jackpot-progress">
+                        <div class="progress-fill" id="minorProgress" style="width: 0%"></div>
+                    </div>
                 </div>
                 <div class="jackpot-type mega">
                     <div class="jackpot-symbols">
@@ -586,7 +617,10 @@
                         <span>🍇</span>
                     </div>
                     <h3>MEGA JACKPOT</h3>
-                    <p>$？？？</p>
+                    <p id="megaAmount">$20.000</p>
+                    <div class="jackpot-progress">
+                        <div class="progress-fill" id="megaProgress" style="width: 0%"></div>
+                    </div>
                 </div>
                 <div class="jackpot-type grand">
                     <div class="jackpot-symbols">
@@ -595,7 +629,10 @@
                         <span>🍎</span>
                     </div>
                     <h3>GRAND JACKPOT</h3>
-                    <p>$？？？</p>
+                    <p id="grandAmount">$40.000</p>
+                    <div class="jackpot-progress">
+                        <div class="progress-fill" id="grandProgress" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -616,6 +653,41 @@
             ];
             const codeInput = document.getElementById('gameCode');
             
+            // 奖池显示元素
+            const jackpotDisplays = {
+                mini: document.getElementById('miniAmount'),
+                minor: document.getElementById('minorAmount'),
+                mega: document.getElementById('megaAmount'),
+                grand: document.getElementById('grandAmount')
+            };
+            
+            // 进度条元素
+            const progressBars = {
+                mini: document.getElementById('miniProgress'),
+                minor: document.getElementById('minorProgress'),
+                mega: document.getElementById('megaProgress'),
+                grand: document.getElementById('grandProgress')
+            };
+            
+            // 奖池配置
+            const jackpotConfig = {
+                mini: { min: 1.0, max: 8.0 },
+                minor: { min: 8.0, max: 20.0 },
+                mega: { min: 20.0, max: 40.0 },
+                grand: { min: 40.0, max: 188.0 }
+            };
+            
+            // 当前奖池值
+            let currentJackpots = {
+                mini: 1.0,
+                minor: 8.0,
+                mega: 20.0,
+                grand: 40.0
+            };
+            
+            // 更新间隔（秒）
+            const updateInterval = 1;
+            
             // Symbol mapping
             const symbolMap = {
                 mini: "🍒",
@@ -634,6 +706,71 @@
             
             // Fruit symbols
             const fruitSymbols = ["🍒", "🍋", "🍇", "🍎", "🍉", "🍊", "🍓", "🍑"];
+            
+            // 从服务器获取奖池值
+            async function fetchJackpotValues() {
+                try {
+                    const response = await fetch('/api/jackpots');
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch jackpot values');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // 更新当前奖池值
+                    if (data.mini) currentJackpots.mini = data.mini.current;
+                    if (data.minor) currentJackpots.minor = data.minor.current;
+                    if (data.mega) currentJackpots.mega = data.mega.current;
+                    if (data.grand) currentJackpots.grand = data.grand.current;
+                    
+                    // 更新显示
+                    updateJackpotDisplays();
+                    
+                } catch (error) {
+                    console.error('Error fetching jackpot values:', error);
+                    // 使用本地配置作为回退
+                    updateJackpotsLocally();
+                }
+            }
+            
+            // 更新本地奖池值（当无法连接服务器时）
+            function updateJackpotsLocally() {
+                const now = new Date();
+                const secondsPassed = 1; // 假设每秒更新一次
+                
+                for (const [type, config] of Object.entries(jackpotConfig)) {
+                    const incrementPerSecond = (config.max - config.min) / (2 * 3600);
+                    currentJackpots[type] += incrementPerSecond * secondsPassed;
+                    
+                    if (currentJackpots[type] >= config.max) {
+                        currentJackpots[type] = config.min;
+                    }
+                }
+                
+                updateJackpotDisplays();
+            }
+            
+            // 更新奖池显示
+            function updateJackpotDisplays() {
+                for (const [type, value] of Object.entries(currentJackpots)) {
+                    if (jackpotDisplays[type]) {
+                        jackpotDisplays[type].textContent = `$${value.toFixed(3)}`;
+                    }
+                    
+                    if (progressBars[type]) {
+                        const config = jackpotConfig[type];
+                        const progress = ((value - config.min) / (config.max - config.min)) * 100;
+                        progressBars[type].style.width = `${progress}%`;
+                    }
+                }
+            }
+            
+            // 启动奖池更新定时器
+            function startJackpotUpdates() {
+                setInterval(() => {
+                    fetchJackpotValues();
+                }, updateInterval * 1000);
+            }
             
             // Get jackpot type from code
             async function getJackpotType(code) {
@@ -820,8 +957,11 @@
             reels.forEach(reel => {
                 reel.innerHTML = buildReelContent("mini");
             });
+            
+            // Initialize jackpots
+            fetchJackpotValues();
+            startJackpotUpdates();
         });
     </script>
 </body>
 </html>
-
