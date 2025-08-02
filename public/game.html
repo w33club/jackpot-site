@@ -527,6 +527,36 @@
             .jackpot-types {
                 grid-template-columns: repeat(2, 1fr);
             }
+
+            .win-amount {
+            display: block;
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #f1c40f;
+            margin-top: 10px;
+            text-shadow: 0 0 10px rgba(241, 196, 15, 0.8);
+            animation: pulse 1s infinite alternate;
+            }
+        
+            @keyframes pulse {
+                0% { transform: scale(1); }
+                50% { transform: scale(1.05); }
+                100% { transform: scale(1); }
+            }
+        
+            .win-text {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                text-align: center;
+            }
+        
+            .win-symbol {
+                font-size: 2rem;
+                margin: 0 5px;
+                vertical-align: middle;
+            }
         }
     </style>
 </head>
@@ -819,9 +849,19 @@
                     
                     if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
                         const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
+                        const winSymbol = centerSymbols[0];
                         
-                        // 在这里添加奖金金额显示
-                        resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span><br>${formattedAmount} 🎉`;
+                        // 创建更美观的中奖信息显示
+                        resultText.innerHTML = `
+                            <div class="win-text">
+                                <div>
+                                    <span class="win-symbol">${winSymbol}</span>
+                                    <span style="color:gold">${prizeType} JACKPOT</span>
+                                    <span class="win-symbol">${winSymbol}</span>
+                                </div>
+                                <div class="win-amount">${formattedAmount}</div>
+                            </div>
+                        `;
                         resultText.className = "result-text win-animation";
                         
                         // 高亮中奖格子
@@ -916,5 +956,6 @@
     </script>
 </body>
 </html>
+
 
 
