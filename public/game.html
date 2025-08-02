@@ -668,80 +668,83 @@
             
             // Build reel content with jackpot symbol at position 5
             function buildReelContent(type) {
-                const jackpotSymbol = symbolMap[type];
-                let html = "";
-                
-                for (let i = 0; i < 30; i++) {
-                    if (i === 5) {
-                        html += `<div class="symbol">${jackpotSymbol}</div>`;
-                    } else {
-                        const randomSymbol = fruitSymbols[Math.floor(Math.random() * fruitSymbols.length)];
-                        html += `<div class="symbol">${randomSymbol}</div>`;
-                    }
-                }
-                return html;
-            }
+            const jackpotSymbol = symbolMap[type];
+            let html = "";
             
-            // Spin the reels
-            function spinReels(type) {
-                resultText.textContent = "SPINNING...";
-                resultText.className = "result-text";
-                spinBtn.disabled = true;
-                
-                // Remove previous win highlights
-                reels.forEach(reel => {
-                    const winCells = reel.querySelectorAll('.win-cell');
-                    winCells.forEach(cell => cell.classList.remove('win-cell'));
-                });
-                
-                // Reset reels and set content
-                reels.forEach(reel => {
-                    reel.innerHTML = buildReelContent(type);
-                    reel.style.top = "-2000px";
-                    reel.style.transition = "none";
-                });
-                
-                // Start spinning animation
-                setTimeout(() => {
-                    // Calculate symbol height for precise positioning
-                    const symbolHeight = reels[0].querySelector('.symbol').offsetHeight;
-                    const stopPosition = -5 * symbolHeight; // Position for center symbol to be at center line
-                    
-                    reels.forEach((reel, index) => {
-                        setTimeout(() => {
-                            reel.style.transition = "top 4s cubic-bezier(0.55, 1, 0.55, 1)";
-                            reel.style.top = `${stopPosition}px`;
-                        }, index * 100);
-                    });
-                }, 50);
-                
-                // Check results after spinning
-                setTimeout(() => {
-                    const centerSymbols = reels.map(reel => {
-                        const symbols = reel.querySelectorAll('.symbol');
-                        return symbols[5].textContent; // Always check position 5 (center)
-                    });
-                    
-                    if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
-                        const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
-                        resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span> 🎉`;
-                        resultText.className = "result-text win-animation";
-                        
-                        // Highlight winning cells
-                        reels.forEach(reel => {
-                            const symbols = reel.querySelectorAll('.symbol');
-                            symbols[5].classList.add('win-cell');
-                        });
-                        
-                        celebrate();
-                    } else {
-                        resultText.textContent = "PLEASE TRY AGAIN";
-                        resultText.className = "result-text";
-                    }
-                    
-                    spinBtn.disabled = false;
-                }, 4000);
+            // 创建更多符号确保滚动效果
+            for (let i = 0; i < 40; i++) {
+                // 中奖符号放在第10位置（将出现在中间）
+                if (i === 10) {
+                    html += `<div class="symbol">${jackpotSymbol}</div>`;
+                } else {
+                    const randomSymbol = fruitSymbols[Math.floor(Math.random() * fruitSymbols.length)];
+                    html += `<div class="symbol">${randomSymbol}</div>`;
+                }
             }
+            return html;
+        }
+        
+        // 旋转卷轴
+        function spinReels(type) {
+            resultText.textContent = "SPINNING...";
+            resultText.className = "result-text";
+            spinBtn.disabled = true;
+            
+            // 移除之前的高亮
+            reels.forEach(reel => {
+                const winCells = reel.querySelectorAll('.win-cell');
+                winCells.forEach(cell => cell.classList.remove('win-cell'));
+            });
+            
+            // 重置卷轴并设置内容
+            reels.forEach(reel => {
+                reel.innerHTML = buildReelContent(type);
+                reel.style.top = "-3000px"; // 从更上方开始
+                reel.style.transition = "none";
+            });
+            
+            // 开始动画
+            setTimeout(() => {
+                const symbolHeight = reels[0].querySelector('.symbol').offsetHeight;
+                // 目标位置：第10个符号在中间行 (10 * symbolHeight)
+                const stopPosition = -10 * symbolHeight + (reels[0].offsetHeight / 2 - symbolHeight / 2);
+                
+                reels.forEach((reel, index) => {
+                    setTimeout(() => {
+                        reel.style.transition = "top 4s cubic-bezier(0.2, 0.8, 0.2, 1)";
+                        reel.style.top = `${stopPosition}px`;
+                    }, index * 300); // 添加延迟创建波浪效果
+                });
+            }, 50);
+            
+            // 旋转后检查结果
+            setTimeout(() => {
+                const centerSymbols = reels.map(reel => {
+                    const symbols = reel.querySelectorAll('.symbol');
+                    // 获取中间行符号（第10个）
+                    return symbols[10].textContent;
+                });
+                
+                if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
+                    const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
+                    resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span> 🎉`;
+                    resultText.className = "result-text win-animation";
+                    
+                    // 高亮中奖符号
+                    reels.forEach(reel => {
+                        const symbols = reel.querySelectorAll('.symbol');
+                        symbols[10].classList.add('win-cell');
+                    });
+                    
+                    celebrate();
+                } else {
+                    resultText.textContent = "PLEASE TRY AGAIN";
+                    resultText.className = "result-text";
+                }
+                
+                spinBtn.disabled = false;
+            }, 4500); // 延长检查时间
+        }
             
             // Celebration effect
             function celebrate() {
@@ -861,3 +864,4 @@
     </script>
 </body>
 </html>
+
