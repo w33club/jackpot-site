@@ -4,7 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken'); // 添加 JWT 依赖
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(cors());
@@ -19,8 +19,36 @@ const pool = new Pool({
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
-// JWT 密钥 - 生产环境应使用更安全的密钥
+// JWT 密钥
 const JWT_SECRET = process.env.JWT_SECRET || 'your_strong_jwt_secret_key';
+
+// 奖金配置
+const JACKPOT_CONFIG = {
+    mini: {
+        min: 1.000,
+        max: 8.000,
+        duration: 2 * 60 * 60 * 1000, // 2小时（毫秒）
+        current: 1.000
+    },
+    minor: {
+        min: 8.000,
+        max: 20.000,
+        duration: 2 * 60 * 60 * 1000,
+        current: 8.000
+    },
+    mega: {
+        min: 20.000,
+        max: 40.000,
+        duration: 2 * 60 * 60 * 1000,
+        current: 20.000
+    },
+    grand: {
+        min: 40.000,
+        max: 188.000,
+        duration: 2 * 60 * 60 * 1000,
+        current: 40.000
+    }
+};
 
 // 初始化数据库表
 async function initDB() {
@@ -52,6 +80,15 @@ async function initDB() {
             )
         `);
         
+        // 创建奖金表
+        await pool.query(`
+            CREATE TABLE IF NOT EXISTS jackpot_amounts (
+                type VARCHAR(10) PRIMARY KEY,
+                current_amount NUMERIC(10,3) NOT NULL,
+                last_updated TIMESTAMP NOT NULL
+            )
+        `);
+        
         // 创建默认管理员账户
         const defaultUsername = 'admin';
         const defaultPassword = 'admin123';
@@ -71,10 +108,86 @@ async function initDB() {
             console.log(`Default admin account created: ${defaultUsername}/${defaultPassword}`);
         }
         
+        // 初始化奖金金额
+        const jackpotTypes = Object.keys(JACKPOT_CONFIG);
+        for (const type of jackpotTypes) {
+            const result = await pool.query(
+                'SELECT * FROM jackpot_amounts WHERE type = $1',
+                [type]
+            );
+            
+            if (result.rows.length === 0) {
+                await pool.query(`
+                    INSERT INTO jackpot_amounts (type, current_amount, last_updated)
+                    VALUES ($1, $2, NOW())
+                `, [type, JACKPOT_CONFIG[type].min]);
+                JACKPOT_CONFIG[type].current = JACKPOT_CONFIG[type].min;
+                console.log(`Initialized ${type} jackpot amount: $${JACKPOT_CONFIG[type].min}`);
+            } else {
+                const row = result.rows[0];
+                JACKPOT_CONFIG[type].current = parseFloat(row.current_amount);
+                console.log(`Loaded ${type} jackpot amount: $${row.current_amount}`);
+            }
+        }
+        
         console.log('Database tables initialized');
     } catch (err) {
         console.error('Error initializing database:', err);
     }
+}
+
+// 更新奖金金额
+async function updateJackpotAmounts() {
+    try {
+        const now = new Date();
+        
+        for (const [type, config] of Object.entries(JACKPOT_CONFIG)) {
+            const result = await pool.query(
+                'SELECT * FROM jackpot_amounts WHERE type = $1',
+                [type]
+            );
+            
+            if (result.rows.length === 0) continue;
+            
+            const row = result.rows[0];
+            const lastUpdated = new Date(row.last_updated);
+            const elapsed = now - lastUpdated;
+            
+            if (elapsed >= config.duration) {
+                // 重置奖金金额
+                await pool.query(`
+                    UPDATE jackpot_amounts
+                    SET current_amount = $1, last_updated = NOW()
+                    WHERE type = $2
+                `, [config.min, type]);
+                JACKPOT_CONFIG[type].current = config.min;
+                console.log(`Reset ${type} jackpot to $${config.min}`);
+            } else {
+                // 计算新金额
+                const progress = elapsed / config.duration;
+                const range = config.max - config.min;
+                const newAmount = config.min + (range * progress);
+                const roundedAmount = parseFloat(newAmount.toFixed(3));
+                
+                // 更新数据库
+                await pool.query(`
+                    UPDATE jackpot_amounts
+                    SET current_amount = $1
+                    WHERE type = $2
+                `, [roundedAmount, type]);
+                JACKPOT_CONFIG[type].current = roundedAmount;
+            }
+        }
+    } catch (err) {
+        console.error('Error updating jackpot amounts:', err);
+    }
+}
+
+// 启动奖金更新定时器
+function startJackpotUpdater() {
+    // 每秒更新一次奖金金额
+    setInterval(updateJackpotAmounts, 1000);
+    console.log('Jackpot amount updater started');
 }
 
 // 用户认证中间件
@@ -326,11 +439,21 @@ app.post('/api/admin/change-password', authenticateJWT, async (req, res) => {
     }
 });
 
+// 获取当前奖金金额
+app.get('/api/jackpot-amounts', (req, res) => {
+    const amounts = {};
+    for (const [type, config] of Object.entries(JACKPOT_CONFIG)) {
+        amounts[type] = config.current;
+    }
+    res.json(amounts);
+});
+
 // 启动服务器
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
     console.log(`Server running on port ${PORT}`);
     await initDB();
+    startJackpotUpdater();
     console.log('JWT Secret:', JWT_SECRET === 'your_strong_jwt_secret_key' ? 
         'Using default JWT secret. For production, set JWT_SECRET environment variable.' : 
         'Using custom JWT secret from environment.');
