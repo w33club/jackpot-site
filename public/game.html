@@ -320,8 +320,6 @@
             font-size: 1.1rem;
             color: #f1c40f;
             margin-top: 8px;
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
         }
         
         .jackpot-symbols {
@@ -570,7 +568,7 @@
                         <span>🍒</span>
                     </div>
                     <h3>MINI JACKPOT</h3>
-                    <p id="miniAmount">$1.000</p>
+                    <p>$100</p>
                 </div>
                 <div class="jackpot-type minor">
                     <div class="jackpot-symbols">
@@ -579,7 +577,7 @@
                         <span>🍋</span>
                     </div>
                     <h3>MINOR JACKPOT</h3>
-                    <p id="minorAmount">$8.000</p>
+                    <p>$250</p>
                 </div>
                 <div class="jackpot-type mega">
                     <div class="jackpot-symbols">
@@ -588,7 +586,7 @@
                         <span>🍇</span>
                     </div>
                     <h3>MEGA JACKPOT</h3>
-                    <p id="megaAmount">$20.000</p>
+                    <p>$500</p>
                 </div>
                 <div class="jackpot-type grand">
                     <div class="jackpot-symbols">
@@ -597,7 +595,7 @@
                         <span>🍎</span>
                     </div>
                     <h3>GRAND JACKPOT</h3>
-                    <p id="grandAmount">$40.000</p>
+                    <p>$1000</p>
                 </div>
             </div>
         </div>
@@ -618,14 +616,6 @@
             ];
             const codeInput = document.getElementById('gameCode');
             
-            // 奖池显示元素
-            const jackpotDisplays = {
-                mini: document.getElementById('miniAmount'),
-                minor: document.getElementById('minorAmount'),
-                mega: document.getElementById('megaAmount'),
-                grand: document.getElementById('grandAmount')
-            };
-            
             // Symbol mapping
             const symbolMap = {
                 mini: "🍒",
@@ -644,140 +634,6 @@
             
             // Fruit symbols
             const fruitSymbols = ["🍒", "🍋", "🍇", "🍎", "🍉", "🍊", "🍓", "🍑"];
-            
-            // 从服务器获取奖池值
-            async function fetchJackpotValues() {
-                try {
-                    const response = await fetch('/api/jackpots');
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch jackpot values');
-                    }
-                    
-                    const data = await response.json();
-                    
-                    // 更新当前奖池值
-                    if (data.mini) jackpotDisplays.mini.textContent = `$${data.mini.current.toFixed(3)}`;
-                    if (data.minor) jackpotDisplays.minor.textContent = `$${data.minor.current.toFixed(3)}`;
-                    if (data.mega) jackpotDisplays.mega.textContent = `$${data.mega.current.toFixed(3)}`;
-                    if (data.grand) jackpotDisplays.grand.textContent = `$${data.grand.current.toFixed(3)}`;
-                    
-                } catch (error) {
-                    console.error('Error fetching jackpot values:', error);
-                }
-            }
-            
-            // Build reel content with jackpot symbol at position 5
-            function buildReelContent(type) {
-            const jackpotSymbol = symbolMap[type];
-            let html = "";
-            
-            // 创建更多符号确保滚动效果
-            for (let i = 0; i < 40; i++) {
-                // 中奖符号放在第10位置（将出现在中间）
-                if (i === 10) {
-                    html += `<div class="symbol">${jackpotSymbol}</div>`;
-                } else {
-                    const randomSymbol = fruitSymbols[Math.floor(Math.random() * fruitSymbols.length)];
-                    html += `<div class="symbol">${randomSymbol}</div>`;
-                }
-            }
-            return html;
-        }
-        
-        // 旋转卷轴
-        function spinReels(type) {
-            resultText.textContent = "SPINNING...";
-            resultText.className = "result-text";
-            spinBtn.disabled = true;
-            
-            // 移除之前的高亮
-            reels.forEach(reel => {
-                const winCells = reel.querySelectorAll('.win-cell');
-                winCells.forEach(cell => cell.classList.remove('win-cell'));
-            });
-            
-            // 重置卷轴并设置内容
-            reels.forEach(reel => {
-                reel.innerHTML = buildReelContent(type);
-                reel.style.top = "-3000px"; // 从更上方开始
-                reel.style.transition = "none";
-            });
-            
-            // 开始动画
-            setTimeout(() => {
-                const symbolHeight = reels[0].querySelector('.symbol').offsetHeight;
-                // 目标位置：第10个符号在中间行 (10 * symbolHeight)
-                const stopPosition = -10 * symbolHeight + (reels[0].offsetHeight / 2 - symbolHeight / 2);
-                
-                reels.forEach((reel, index) => {
-                    setTimeout(() => {
-                        reel.style.transition = "top 4s cubic-bezier(0.2, 0.8, 0.2, 1)";
-                        reel.style.top = `${stopPosition}px`;
-                    }, index * 300); // 添加延迟创建波浪效果
-                });
-            }, 50);
-            
-            // 旋转后检查结果
-            setTimeout(() => {
-                const centerSymbols = reels.map(reel => {
-                    const symbols = reel.querySelectorAll('.symbol');
-                    // 获取中间行符号（第10个）
-                    return symbols[10].textContent;
-                });
-                
-                if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
-                    const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
-                    resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span> 🎉`;
-                    resultText.className = "result-text win-animation";
-                    
-                    // 高亮中奖符号
-                    reels.forEach(reel => {
-                        const symbols = reel.querySelectorAll('.symbol');
-                        symbols[10].classList.add('win-cell');
-                    });
-                    
-                    celebrate();
-                } else {
-                    resultText.textContent = "PLEASE TRY AGAIN";
-                    resultText.className = "result-text";
-                }
-                
-                spinBtn.disabled = false;
-            }, 4500); // 延长检查时间
-        }
-            
-            // Celebration effect
-            function celebrate() {
-                const container = document.querySelector('.container');
-                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
-                
-                for (let i = 0; i < 50; i++) {
-                    setTimeout(() => {
-                        const confetti = document.createElement('div');
-                        confetti.style.position = 'absolute';
-                        confetti.style.width = '10px';
-                        confetti.style.height = '10px';
-                        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                        confetti.style.borderRadius = '50%';
-                        confetti.style.left = `${Math.random() * 100}%`;
-                        confetti.style.top = `${Math.random() * 100}%`;
-                        confetti.style.zIndex = '1000';
-                        confetti.style.pointerEvents = 'none';
-                        container.appendChild(confetti);
-                        
-                        // Animation
-                        const animation = confetti.animate([
-                            { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
-                            { transform: `translateY(${Math.random() * 400 - 200}px) translateX(${Math.random() * 200 - 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-                        ], {
-                            duration: 1500 + Math.random() * 1000,
-                            easing: 'cubic-bezier(0, .9, .57, 1)'
-                        });
-                        
-                        animation.onfinish = () => confetti.remove();
-                    }, i * 50);
-                }
-            }
             
             // Get jackpot type from code
             async function getJackpotType(code) {
@@ -812,6 +668,116 @@
                 } catch (error) {
                     console.error('Error validating code:', error);
                     return null;
+                }
+            }
+            
+            // Build reel content with jackpot symbol at position 5
+            function buildReelContent(jackpotType) {
+                const jackpotSymbol = symbolMap[jackpotType];
+                let html = "";
+                
+                for (let i = 0; i < 30; i++) {
+                    if (i === 5) {
+                        html += `<div class="symbol">${jackpotSymbol}</div>`;
+                    } else {
+                        const randomSymbol = fruitSymbols[Math.floor(Math.random() * fruitSymbols.length)];
+                        html += `<div class="symbol">${randomSymbol}</div>`;
+                    }
+                }
+                return html;
+            }
+            
+            // Spin the reels
+            function spinReels(type) {
+                resultText.textContent = "SPINNING...";
+                resultText.className = "result-text";
+                spinBtn.disabled = true;
+                
+                // Remove previous win highlights
+                reels.forEach(reel => {
+                    const winCells = reel.querySelectorAll('.win-cell');
+                    winCells.forEach(cell => cell.classList.remove('win-cell'));
+                });
+                
+                // Reset reels and set content
+                reels.forEach(reel => {
+                    reel.innerHTML = buildReelContent(type);
+                    reel.style.top = "-2000px";
+                    reel.style.transition = "none";
+                });
+                
+                // Start spinning animation
+                setTimeout(() => {
+                    // Calculate symbol height for precise positioning
+                    const symbolHeight = reels[0].querySelector('.symbol').offsetHeight;
+                    const stopPosition = -4 * symbolHeight; // Position for center symbol to be at center line
+                    
+                    reels.forEach((reel, index) => {
+                        setTimeout(() => {
+                            reel.style.transition = "top 4s cubic-bezier(0.55, 1, 0.55, 1)";
+                            reel.style.top = `${stopPosition}px`;
+                        }, index * 100);
+                    });
+                }, 50);
+                
+                // Check results after spinning
+                setTimeout(() => {
+                    const centerSymbols = reels.map(reel => {
+                        const symbols = reel.querySelectorAll('.symbol');
+                        return symbols[5].textContent; // Always check position 5 (center)
+                    });
+                    
+                    if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
+                        const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
+                        resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span> 🎉`;
+                        resultText.className = "result-text win-animation";
+                        
+                        // Highlight winning cells
+                        reels.forEach(reel => {
+                            const symbols = reel.querySelectorAll('.symbol');
+                            symbols[5].classList.add('win-cell');
+                        });
+                        
+                        celebrate();
+                    } else {
+                        resultText.textContent = "PLEASE TRY AGAIN";
+                        resultText.className = "result-text";
+                    }
+                    
+                    spinBtn.disabled = false;
+                }, 4000);
+            }
+            
+            // Celebration effect
+            function celebrate() {
+                const container = document.querySelector('.container');
+                const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+                
+                for (let i = 0; i < 50; i++) {
+                    setTimeout(() => {
+                        const confetti = document.createElement('div');
+                        confetti.style.position = 'absolute';
+                        confetti.style.width = '10px';
+                        confetti.style.height = '10px';
+                        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                        confetti.style.borderRadius = '50%';
+                        confetti.style.left = `${Math.random() * 100}%`;
+                        confetti.style.top = `${Math.random() * 100}%`;
+                        confetti.style.zIndex = '1000';
+                        confetti.style.pointerEvents = 'none';
+                        container.appendChild(confetti);
+                        
+                        // Animation
+                        const animation = confetti.animate([
+                            { transform: 'translateY(0) rotate(0deg)', opacity: 1 },
+                            { transform: `translateY(${Math.random() * 400 - 200}px) translateX(${Math.random() * 200 - 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                        ], {
+                            duration: 1500 + Math.random() * 1000,
+                            easing: 'cubic-bezier(0, .9, .57, 1)'
+                        });
+                        
+                        animation.onfinish = () => confetti.remove();
+                    }, i * 50);
                 }
             }
             
@@ -854,14 +820,7 @@
             reels.forEach(reel => {
                 reel.innerHTML = buildReelContent("mini");
             });
-            
-            // Initialize jackpots
-            fetchJackpotValues();
-            
-            // Update jackpot amounts every second
-            setInterval(fetchJackpotValues, 1000);
         });
     </script>
 </body>
 </html>
-
