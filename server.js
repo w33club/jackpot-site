@@ -189,46 +189,58 @@ async function getJackpotValues() {
 
 // 更新奖池值（2小时周期）
 async function updateJackpotValues() {
-  try {
-    const now = new Date();
-    const jackpots = await getJackpotValues();
-    
-    if (!jackpots) return;
-    
-    for (const [name, jackpot] of Object.entries(jackpots)) {
-      const lastReset = new Date(jackpot.lastReset);
-      const elapsedMs = now - lastReset;
-      const elapsedHours = elapsedMs / (1000 * 60 * 60);
-      
-      // 检查是否需要重置（每2小时重置一次）
-      if (elapsedHours >= 2) {
-        // 重置为最小值并更新重置时间
-        await pool.query(`
-          UPDATE jackpots 
-          SET current_value = $1, last_updated = $2, last_reset = $2
-          WHERE name = $3
-        `, [jackpot.min, now, name]);
-        continue;
-      }
-      
-      // 计算当前进度（0-1之间）
-      const progress = elapsedHours / 2;
-      
-      // 计算新值（线性增长）
-      const range = jackpot.max - jackpot.min;
-      const newValue = jackpot.min + (range * progress);
-      
-      // 更新数据库
-      await pool.query(`
-        UPDATE jackpots 
-        SET current_value = $1, last_updated = $2 
-        WHERE name = $3
-      `, [newValue, now, name]);
+    try {
+        const now = new Date();
+        
+        // 直接查询数据库获取当前奖池值
+        const result = await pool.query('SELECT * FROM jackpots');
+        const jackpots = {};
+        
+        result.rows.forEach(row => {
+            jackpots[row.name] = {
+                current: parseFloat(row.current_value),
+                min: parseFloat(row.min_value),
+                max: parseFloat(row.max_value),
+                lastUpdated: new Date(row.last_updated),
+                lastReset: new Date(row.last_reset)
+            };
+        });
+        
+        for (const [name, jackpot] of Object.entries(jackpots)) {
+            const lastReset = jackpot.lastReset;
+            const elapsedMs = now - lastReset;
+            const elapsedHours = elapsedMs / (1000 * 60 * 60);
+            
+            // 检查是否需要重置（每2小时重置一次）
+            if (elapsedHours >= 2) {
+                // 重置为最小值并更新重置时间
+                await pool.query(`
+                    UPDATE jackpots 
+                    SET current_value = $1, last_updated = $2, last_reset = $2
+                    WHERE name = $3
+                `, [jackpot.min, now, name]);
+                continue;
+            }
+            
+            // 计算当前进度（0-1之间）
+            const progress = elapsedHours / 2;
+            
+            // 计算新值（指数增长更自然）
+            const range = jackpot.max - jackpot.min;
+            const newValue = jackpot.min + (range * Math.pow(progress, 1.5));
+            
+            // 更新数据库
+            await pool.query(`
+                UPDATE jackpots 
+                SET current_value = $1, last_updated = $2 
+                WHERE name = $3
+            `, [newValue, now, name]);
+        }
+    } catch (err) {
+        console.error('Error updating jackpot values:', err);
     }
-  } catch (err) {
-    console.error('Error updating jackpot values:', err);
-  }
 }
+
 
 // 添加路由处理
 app.get('/', (req, res) => {
@@ -454,3 +466,4 @@ app.listen(PORT, async () => {
   
   console.log('Jackpot update timer started (every second)');
 });
+
