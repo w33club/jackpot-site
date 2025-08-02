@@ -677,18 +677,19 @@
                 const display = amountDisplays[type];
                 const formattedAmount = '$' + amount.toFixed(3);
                 
-                // 检测金额是否变化
                 if (Math.abs(currentAmounts[type] - amount) > 0.001) {
                     display.textContent = formattedAmount;
                     display.classList.add('amount-change');
                     
-                    // 移除动画类
                     setTimeout(() => {
                         display.classList.remove('amount-change');
                     }, 500);
                     
                     currentAmounts[type] = amount;
                 }
+                
+                // 更新用于显示的当前金额
+                currentJackpotAmounts[type] = amount;
             }
             
             // 获取奖金金额
@@ -768,28 +769,31 @@
             
             // Spin the reels
             function spinReels(type) {
+                // 获取当前奖金金额
+                const jackpotAmount = currentJackpotAmounts[type];
+                const formattedAmount = '$' + jackpotAmount.toFixed(3);
+                
                 resultText.textContent = "SPINNING...";
                 resultText.className = "result-text";
                 spinBtn.disabled = true;
                 
-                // Remove previous win highlights
+                // 移除之前的高亮
                 reels.forEach(reel => {
                     const winCells = reel.querySelectorAll('.win-cell');
                     winCells.forEach(cell => cell.classList.remove('win-cell'));
                 });
                 
-                // Reset reels and set content
+                // 重置转盘
                 reels.forEach(reel => {
                     reel.innerHTML = buildReelContent(type);
                     reel.style.top = "-2000px";
                     reel.style.transition = "none";
                 });
                 
-                // Start spinning animation
+                // 开始旋转动画
                 setTimeout(() => {
-                    // Calculate symbol height for precise positioning
                     const symbolHeight = reels[0].querySelector('.symbol').offsetHeight;
-                    const stopPosition = -4 * symbolHeight; // Position for center symbol to be at center line
+                    const stopPosition = -4 * symbolHeight;
                     
                     reels.forEach((reel, index) => {
                         setTimeout(() => {
@@ -799,19 +803,21 @@
                     });
                 }, 50);
                 
-                // Check results after spinning
+                // 旋转结束后检查结果
                 setTimeout(() => {
                     const centerSymbols = reels.map(reel => {
                         const symbols = reel.querySelectorAll('.symbol');
-                        return symbols[5].textContent; // Always check position 5 (center)
+                        return symbols[5].textContent;
                     });
                     
                     if (centerSymbols[0] === centerSymbols[1] && centerSymbols[1] === centerSymbols[2]) {
                         const prizeType = symbolToPrize[centerSymbols[0]] || "JACKPOT";
-                        resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span> 🎉`;
+                        
+                        // 在这里添加奖金金额显示
+                        resultText.innerHTML = `🎉 <span style="color:gold">${prizeType} JACKPOT WON!</span><br>${formattedAmount} 🎉`;
                         resultText.className = "result-text win-animation";
                         
-                        // Highlight winning cells
+                        // 高亮中奖格子
                         reels.forEach(reel => {
                             const symbols = reel.querySelectorAll('.symbol');
                             symbols[5].classList.add('win-cell');
@@ -903,3 +909,4 @@
     </script>
 </body>
 </html>
+
