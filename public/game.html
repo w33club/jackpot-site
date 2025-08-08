@@ -619,7 +619,7 @@
                         <span>🍒</span>
                     </div>
                     <h3>MINI JACKPOT</h3>
-                    <div class="amount-display" id="mini-amount">$1.000</div>
+                    <div class="amount-display" id="mini-amount">$1.00</div>
                 </div>
                 <div class="jackpot-type minor">
                     <div class="jackpot-symbols">
@@ -628,7 +628,7 @@
                         <span>🍋</span>
                     </div>
                     <h3>MINOR JACKPOT</h3>
-                    <div class="amount-display" id="minor-amount">$8.000</div>
+                    <div class="amount-display" id="minor-amount">$8.00</div>
                 </div>
                 <div class="jackpot-type mega">
                     <div class="jackpot-symbols">
@@ -637,7 +637,7 @@
                         <span>🍇</span>
                     </div>
                     <h3>MEGA JACKPOT</h3>
-                    <div class="amount-display" id="mega-amount">$20.000</div>
+                    <div class="amount-display" id="mega-amount">$20.00</div>
                 </div>
                 <div class="jackpot-type grand">
                     <div class="jackpot-symbols">
@@ -646,7 +646,7 @@
                         <span>🍎</span>
                     </div>
                     <h3>GRAND JACKPOT</h3>
-                    <div class="amount-display" id="grand-amount">$40.000</div>
+                    <div class="amount-display" id="grand-amount">$40.00</div>
                 </div>
             </div>
         </div>
@@ -696,25 +696,25 @@
             
             // 存储当前金额用于检测变化
             let currentAmounts = {
-                mini: 1.000,
-                minor: 8.000,
-                mega: 20.000,
-                grand: 40.000
+                mini: 1.00,
+                minor: 8.00,
+                mega: 20.00,
+                grand: 40.00
             };
             
             let currentJackpotAmounts = {
-                mini: 1.000,
-                minor: 8.000,
-                mega: 20.000,
-                grand: 40.000
+                mini: 1.00,
+                minor: 8.00,
+                mega: 20.00,
+                grand: 40.00
             };
             
             // 更新奖金显示
             function updateAmountDisplay(type, amount) {
                 const display = amountDisplays[type];
-                const formattedAmount = '$' + amount.toFixed(3);
+                const formattedAmount = '$' + amount.toFixed(2);
                 
-                if (Math.abs(currentAmounts[type] - amount) > 0.001) {
+                if (Math.abs(currentAmounts[type] - amount) > 0.01) {
                     display.textContent = formattedAmount;
                     display.classList.add('amount-change');
                     
@@ -736,10 +736,10 @@
                     const amounts = await response.json();
                     
                     if (amounts) {
-                        updateAmountDisplay('mini', amounts.mini || 1.000);
-                        updateAmountDisplay('minor', amounts.minor || 8.000);
-                        updateAmountDisplay('mega', amounts.mega || 20.000);
-                        updateAmountDisplay('grand', amounts.grand || 40.000);
+                        updateAmountDisplay('mini', amounts.mini || 1.00);
+                        updateAmountDisplay('minor', amounts.minor || 8.00);
+                        updateAmountDisplay('mega', amounts.mega || 20.00);
+                        updateAmountDisplay('grand', amounts.grand || 40.00);
                     }
                 } catch (error) {
                     console.error('Error fetching jackpot amounts:', error);
@@ -808,7 +808,7 @@
             function spinReels(type) {
                 // 获取当前奖金金额
                 const jackpotAmount = currentJackpotAmounts[type];
-                const formattedAmount = '$' + jackpotAmount.toFixed(3);
+                const formattedAmount = '$' + jackpotAmount.toFixed(2);
                 
                 resultText.textContent = "SPINNING...";
                 resultText.className = "result-text";
@@ -956,6 +956,7 @@
     </script>
 </body>
 </html>
+
 
 
 
