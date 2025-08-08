@@ -25,28 +25,28 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your_strong_jwt_secret_key';
 // 奖金配置
 const JACKPOT_CONFIG = {
     mini: {
-        min: 1.000,
-        max: 8.000,
+        min: 1.00,
+        max: 8.00,
         duration: 2 * 60 * 60 * 1000, // 2小时（毫秒）
-        current: 1.000
+        current: 1.00
     },
     minor: {
-        min: 8.000,
-        max: 20.000,
+        min: 8.00,
+        max: 20.00,
         duration: 2 * 60 * 60 * 1000,
-        current: 8.000
+        current: 8.00
     },
     mega: {
-        min: 20.000,
-        max: 40.000,
+        min: 20.00,
+        max: 40.00,
         duration: 2 * 60 * 60 * 1000,
-        current: 20.000
+        current: 20.00
     },
     grand: {
-        min: 40.000,
-        max: 188.000,
+        min: 40.00,
+        max: 188.00,
         duration: 2 * 60 * 60 * 1000,
-        current: 40.000
+        current: 40.00
     }
 };
 
@@ -167,7 +167,7 @@ async function updateJackpotAmounts() {
                 const progress = elapsed / config.duration;
                 const range = config.max - config.min;
                 const newAmount = config.min + (range * progress);
-                const roundedAmount = parseFloat(newAmount.toFixed(3));
+                const roundedAmount = parseFloat(newAmount.toFixed(2));
                 
                 // 更新数据库
                 await pool.query(`
@@ -458,3 +458,4 @@ app.listen(PORT, async () => {
         'Using default JWT secret. For production, set JWT_SECRET environment variable.' : 
         'Using custom JWT secret from environment.');
 });
+
